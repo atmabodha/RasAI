@@ -74,6 +74,7 @@ When modifying or extending the synthesis or composition engines, adhere to the 
 
 ## 4. Coding Guidelines for Agents
 
+- **VENV**: use the ../utmtvenv folder for python imports and runs.
 - **Preserve Backward Compatibility**: Keep legacy helper functions (`lyrics_to_notes` tuple unpacking behavior, `render_melody`, `tanpura_drone`, `tabla_track_mono`) working so older notebook cells or external callers do not break.
 - **Deterministic Synthesis**: Use seeded `np.random.default_rng(...)` (or deterministic hashes of lyrics/note events) so identical inputs produce reproducible musical compositions and audio outputs.
 - **Graceful Fallbacks**:

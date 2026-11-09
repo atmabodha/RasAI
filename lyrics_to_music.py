@@ -313,17 +313,59 @@ RAGAS: Dict[str, Dict] = {
 # ==============================================================================
 
 SECTION_RE = re.compile(
-    r"^\[?\s*(verse|chorus|bridge|pre-chorus|outro|intro|hook|refrain|interlude|alap|finale)"
+    r"^\[?\s*(verse|chorus|bridge|pre-chorus|outro|intro|hook|refrain|interlude|alap|finale|mukhda|antara|tarana)"
     r"(?:\s*\d+)?\s*\]?\s*:?\s*$",
     re.IGNORECASE,
 )
+
+# Basic Devanagari-to-Roman phonetic mapping for direct Hindi/Sanskrit script support
+_DEVANAGARI_MAP: Dict[str, str] = {
+    "अ": "a", "आ": "aa", "इ": "i", "ई": "ee", "उ": "u", "ऊ": "oo",
+    "ऋ": "ri", "ए": "e", "ऐ": "ai", "ओ": "o", "औ": "au",
+    "ा": "aa", "ि": "i", "ी": "ee", "ु": "u", "ू": "oo",
+    "ृ": "ri", "े": "e", "ै": "ai", "ो": "o", "ौ": "au",
+    "ं": "n", "ँ": "n", "ः": "h", "्": "", "ऽ": "a",
+    "क": "ka", "ख": "kha", "ग": "ga", "घ": "gha", "ङ": "nga",
+    "च": "cha", "छ": "chha", "ज": "ja", "झ": "jha", "ञ": "nya",
+    "ट": "ta", "ठ": "tha", "ड": "da", "ढ": "dha", "ण": "na",
+    "त": "ta", "थ": "tha", "द": "da", "ध": "dha", "न": "na",
+    "प": "pa", "फ": "pha", "ब": "ba", "भ": "bha", "म": "ma",
+    "य": "ya", "र": "ra", "ल": "la", "व": "va",
+    "श": "sha", "ष": "sha", "स": "sa", "ह": "ha",
+    "।": "", "॥": "", "़": "",
+}
+_DEVANAGARI_MATRAS = set("ािीुूृेैोौ्")
+
+
+def transliterate_devanagari(text: str) -> str:
+    """Convert Devanagari Unicode characters into Romanized Hindi phonetics if present."""
+    if not any("\u0900" <= ch <= "\u097f" for ch in text):
+        return text
+    # Strip combining nukta (\u093c) first so consonant + nukta is treated cleanly at word boundaries
+    clean_text = text.replace("\u093c", "")
+    out: List[str] = []
+    n = len(clean_text)
+    for i, ch in enumerate(clean_text):
+        if "\u0900" <= ch <= "\u097f":
+            rom = _DEVANAGARI_MAP.get(ch, "")
+            # Drop inherent schwa 'a' when followed by a vowel matra, virama, or word boundary
+            if rom.endswith("a") and len(rom) >= 2 and ch not in ("अ", "आ"):
+                nxt = clean_text[i + 1] if i + 1 < n else " "
+                if nxt in _DEVANAGARI_MATRAS or not ("\u0900" <= nxt <= "\u097f"):
+                    rom = rom[:-1]
+            out.append(rom)
+        else:
+            out.append(ch)
+    return "".join(out)
 
 
 def parse_song(raw: str) -> List[Dict]:
     """
     Parse raw lyrics into structured sections while preserving individual
     poetic lines (`lines` list) as well as combined `text`.
+    Supports both Roman/English and Devanagari scripts.
     """
+    raw = transliterate_devanagari(raw)
     sections: List[Dict] = []
     cur_label: Optional[str] = None
     cur_lines: List[str] = []
@@ -377,6 +419,24 @@ def parse_song(raw: str) -> List[Dict]:
 # 4. NAVARASA POETIC SENTIMENT & RAGA SELECTION ENGINE
 # ==============================================================================
 
+HINDI_FUNCTION_WORDS = {
+    "ke", "ki", "ka", "ko", "se", "ne", "pe", "par", "mein", "men", "mai",
+    "hi", "hee", "bhi", "bhee", "na", "nahi", "nahin", "naheen", "ho", "hai", "hain", "tha", "thi", "thee",
+    "ye", "yeh", "wo", "woh", "jo", "ab", "ek", "aur", "kya", "kis", "kisi", "kisee",
+    "jab", "tab", "phir", "hum", "tum", "tu", "aap", "mera", "mere", "meri", "meree",
+    "tera", "tere", "teri", "teree", "apna", "apne", "apni", "apnee", "un", "re",
+}
+
+# English words that are false cognates (homographs) with common Hindi words
+ENGLISH_HOMOGRAPH_EXCLUSIONS = {
+    "sun",   # Hindi: "listen!" (सुन), NOT English "sun"
+    "deep",  # Hindi: "lamp" (दीप), NOT English "deep"
+    "more",  # Hindi/Braj: "my / peacock" (मोरे / मोर), NOT English "more"
+    "main",  # Hindi: "I / in" (मैं / में), NOT English "main"
+    "man",   # Hindi: "mind / heart" (मन), NOT English "man"
+    "in", "us", "to", "so", "no", "he", "be", "do",
+}
+
 LEXICON = {
     "sorrow": {
         "sorrow", "sadness", "sad", "parting", "tears", "tear", "cry", "crying", "weep",
@@ -384,6 +444,13 @@ LEXICON = {
         "shadow", "shadows", "dark", "darkness", "fade", "fading", "goodbye", "farewell",
         "empty", "cold", "grave", "wound", "bleed", "mourning", "sigh", "regret", "ash",
         "ashes", "dust", "shattered", "fall", "falling", "drown", "ghost", "gone",
+        # Hindi / Urdu / Bollywood Karuna & Viraha vocabulary
+        "dard", "aansoo", "aansu", "neer", "judaai", "judai", "birha", "viraha",
+        "pyaasa", "pyasa", "pyaas", "pyas", "toofaan", "toofan", "lut", "ujada", "ujad",
+        "rooth", "daag", "maili", "dukhiyaare", "dukhiyare", "dukh", "niraasha", "nirasha",
+        "tooti", "toot", "chhaale", "chhale", "tanha", "tanhaai", "gham", "rona", "roye",
+        "bhoole", "bhool", "bichhade", "bichhde", "naale", "adhoori", "adhuri", "soona",
+        "sooni", "udaas", "harjaai", "angaare", "patthar",
     },
     "peace_nature": {
         "stillness", "still", "morning", "dawn", "river", "banyan", "ancient", "peace",
@@ -391,6 +458,11 @@ LEXICON = {
         "mountains", "sea", "ocean", "sky", "clouds", "tree", "trees", "forest", "lotus",
         "temple", "prayer", "sacred", "holy", "grace", "light", "moon", "moonlight",
         "breath", "breathe", "flow", "flowing", "earth", "rain", "monsoon", "garden",
+        # Hindi / Sanskrit Nature, Dawn & Bhakti vocabulary
+        "jaago", "jago", "jaag", "bhor", "savera", "prabhat", "ujala", "ujiyaara",
+        "kiran", "kiranon", "mohan", "hari", "bhagwaan", "bhagwan", "tulsi", "angan",
+        "mandir", "pooja", "aarti", "jyot", "darshan", "aatma", "bansi", "hawa",
+        "phool", "kaliyaan", "gagan", "saawan", "sawan", "bhaadon", "bhadon", "barakha",
     },
     "yearning_love": {
         "home", "belong", "heart", "love", "lover", "beloved", "calling", "call", "need",
@@ -398,37 +470,109 @@ LEXICON = {
         "touch", "kiss", "embrace", "memory", "memories", "remember", "wish", "hope",
         "soul", "desire", "burn", "burning", "forever", "always", "together", "distance",
         "somewhere", "find", "finds", "meet", "return", "arms",
+        # Hindi / Urdu Romantic Shringara & Yearning vocabulary
+        "dil", "pyaar", "pyar", "mohabbat", "ishq", "pritam", "sajan", "balma", "piya",
+        "naina", "nain", "nazar", "ankhiyon", "aankh", "honthon", "baahein", "chhod",
+        "bhara", "bahaar", "mehak", "behak", "shaam", "sambhal", "nashe", "sitaare",
+        "charaag", "silsila", "aas", "chaah", "deewaane", "yaad", "dilaasa", "milan",
     },
     "joy_triumph": {
         "joy", "happy", "smile", "laugh", "laughter", "dance", "dancing", "sing",
         "singing", "celebrate", "shine", "shining", "bright", "sun", "sunshine", "gold",
         "golden", "rise", "rising", "fly", "flying", "wings", "free", "freedom", "victory",
         "win", "glory", "bloom", "blossom", "alive", "awakening", "rejoice", "fireworks",
+        # Hindi Utsaha / Joy vocabulary
+        "muskaaye", "muskaye", "navayug", "jhilmila", "jagmaga", "khushi", "utsav", "rang",
     },
     "mystic_power": {
         "night", "midnight", "stars", "star", "cosmos", "universe", "infinite", "eternal",
         "eternity", "storm", "thunder", "lightning", "fire", "flame", "power", "destiny",
         "fate", "mystery", "secret", "deep", "abyss", "king", "crown", "warrior", "brave",
         "fearless", "immortal", "awaken",
+        # Hindi / Urdu Gambhira & Mystic vocabulary
+        "raat", "andhera", "aag", "bijuri", "maaya", "kismat", "duniya", "rakhwaale",
+        "tadpat", "darshan", "shakti",
+    },
+}
+
+# Specialized Hindi/Bollywood Raga signature vocabularies for authentic classical mapping
+INDIC_RAGA_SIGNATURES: Dict[str, set] = {
+    "Yaman": {
+        "abhi", "abhee", "jao", "jaao", "chhod", "bhara", "bahaar", "mehak", "behak", "shaam", "sambhal",
+        "nashe", "ghoont", "sitaare", "charaag", "jhilmila", "jhilamila", "jagmaga", "jagamaga", "silsila",
+        "nibhaaogi", "aazmaayenge", "gila", "pritam", "sanam", "ehsaan",
+    },
+    "Darbari": {
+        "rakhwaale", "rakhwale", "rakhavaale", "naale", "harjaai", "lut", "nagari", "nagaree", "angaare",
+        "patthar", "sahaare", "kismat", "phooti", "chhaale", "mahal", "udaas", "niraas",
+        "sooni", "deewaaren", "ujada", "ujadi", "guzaaren", "toofaan",
+    },
+    "Bhairav": {
+        "jaago", "jago", "jaag", "ujiyaara", "kiranon", "kiran", "mohan", "navayug",
+        "tihaare", "kaliyaan", "galiyaan", "bhor", "ujala", "gagari", "gagaree", "jyot",
+        "tulsi", "tulasee", "angan", "prabhat", "savera",
+    },
+    "Shivaranjani": {
+        "naina", "saawan", "saavan", "bhaadon", "pyaasa", "deewaane", "deevaane", "honthon", "puraani",
+        "kahaani", "bhoole", "jhoole", "dilaasa", "barson", "bichhade", "bijuri",
+        "rekha", "michauli", "humsafar", "mehbooba", "baharon",
+    },
+    "Bhairavi": {
+        "laaga", "laga", "chunari", "chunaree", "chunariya", "daag", "chhupaaoon", "jaaoon",
+        "maili", "mailee", "mori", "moree", "kore", "kori", "baabul", "nazrein", "milaaoon", "bida",
+        "sasuraal", "aatma", "maaya", "dheem", "dhir", "noom", "sapta", "suran", "bansi",
+    },
+    "Malkauns": {
+        "tadpat", "hari", "haree", "darshan", "nirdhar", "tore", "bin", "mandir", "shyam",
+    },
+    "Desh": {
+        "papihara", "badal", "baadal", "megh", "barkha", "vatan", "desh", "mor", "koyal",
     },
 }
 
 
-def analyze_rasa(text: str, label: str = "") -> Dict[str, float]:
-    """Compute multidimensional Navarasa emotional scores for lyrics text."""
+def is_indic_text(text: str) -> bool:
+    """Detect whether lyrics text is Hindi/Urdu/Sanskrit (Devanagari or Romanized)."""
+    if any("\u0900" <= ch <= "\u097f" for ch in text):
+        return True
     words = [re.sub(r"[^a-z']", "", w.lower()) for w in text.split()]
+    words = [w for w in words if w]
+    if not words:
+        return False
+    indic_hits = sum(
+        1 for w in words
+        if w in HINDI_FUNCTION_WORDS
+        or any(w in sig for sig in INDIC_RAGA_SIGNATURES.values())
+    )
+    return (indic_hits / len(words)) >= 0.14 or indic_hits >= 3
+
+
+def analyze_rasa(text: str, label: str = "") -> Dict[str, float]:
+    """Compute multidimensional Navarasa emotional scores for lyrics text (English & Indic)."""
+    norm_text = transliterate_devanagari(text)
+    indic_mode = is_indic_text(norm_text)
+
+    words = [re.sub(r"[^a-z']", "", w.lower()) for w in norm_text.split()]
     words = [w for w in words if w]
     n_words = max(1, len(words))
 
     counts = {k: 0.0 for k in LEXICON}
     for w in words:
+        if indic_mode and w in ENGLISH_HOMOGRAPH_EXCLUSIONS:
+            continue
         for cat, vocab in LEXICON.items():
             if w in vocab:
                 counts[cat] += 1.0
 
-    blob = TextBlob(text)
-    polarity = float(blob.sentiment.polarity)
-    subjectivity = float(blob.sentiment.subjectivity)
+    if indic_mode:
+        # Avoid English TextBlob false-cognate polarity (e.g. Hindi 'more', 'deep', 'main')
+        total_em = counts["sorrow"] + counts["joy_triumph"] + counts["yearning_love"] + 1e-6
+        polarity = float((counts["joy_triumph"] - counts["sorrow"]) / max(2.0, total_em))
+        subjectivity = float(min(1.0, (counts["sorrow"] + counts["yearning_love"] + counts["joy_triumph"]) / max(3.0, n_words * 0.35)))
+    else:
+        blob = TextBlob(norm_text)
+        polarity = float(blob.sentiment.polarity)
+        subjectivity = float(blob.sentiment.subjectivity)
 
     # Normalize lexical densities
     scale = 10.0 / math.sqrt(n_words)
@@ -455,13 +599,39 @@ def analyze_rasa(text: str, label: str = "") -> Dict[str, float]:
     }
 
 
+def _score_indic_raga_signatures(text: str) -> Optional[str]:
+    """Match classical Hindi/Urdu poetic imagery to its canonical Raga when strong cues exist."""
+    norm_text = transliterate_devanagari(text)
+    if not is_indic_text(norm_text):
+        return None
+    words = [re.sub(r"[^a-z']", "", w.lower()) for w in norm_text.split()]
+    words = [w for w in words if w]
+    if not words:
+        return None
+
+    raga_hits: Dict[str, int] = {r: 0 for r in INDIC_RAGA_SIGNATURES}
+    for w in words:
+        for r_name, vocab in INDIC_RAGA_SIGNATURES.items():
+            if w in vocab:
+                raga_hits[r_name] += 1
+
+    best_raga, best_score = max(raga_hits.items(), key=lambda kv: kv[1])
+    if best_score >= 2:
+        return best_raga
+    return None
+
+
 def pick_raga(text: str, label: str = "", forced_raga: Optional[str] = None) -> Tuple[str, Dict]:
     """
-    Select the ideal Raga for a section using Navarasa emotional analysis
-    and structural role (Verse / Chorus / Bridge / Outro).
+    Select the ideal Raga for a section using Navarasa emotional analysis,
+    Indic classical poetic signatures, and structural role (Verse / Chorus / Bridge / Outro).
     """
     if forced_raga and forced_raga in RAGAS:
         return forced_raga, RAGAS[forced_raga]
+
+    indic_match = _score_indic_raga_signatures(text)
+    if indic_match and indic_match in RAGAS:
+        return indic_match, RAGAS[indic_match]
 
     scores = analyze_rasa(text, label)
     lbl = label.lower()
@@ -492,12 +662,12 @@ def pick_raga(text: str, label: str = "", forced_raga: Optional[str] = None) -> 
     elif scores["mystic"] > max(scores["peace"], scores["yearning"]) + 0.3:
         raga = "Malkauns" if "bridge" in lbl or "verse" in lbl else "Bhairav"
     elif scores["yearning"] > scores["peace"] + 0.25:
-        raga = "Desh" if "chorus" in lbl else "Yaman"
+        raga = "Yaman" if is_indic_text(text) else ("Desh" if "chorus" in lbl else "Yaman")
     else:
         # Serene / Nature / Spiritual
         if "morning" in text.lower() or "dawn" in text.lower() or "ancient" in text.lower():
             raga = "Yaman" if "chorus" in lbl else ("Bhairav" if scores["mystic"] > 0.5 else "Yaman")
-        elif "chorus" in lbl:
+        elif "chorus" in lbl and not is_indic_text(text):
             raga = "Desh"
         elif "outro" in lbl:
             raga = "Bhairavi"
@@ -505,6 +675,24 @@ def pick_raga(text: str, label: str = "", forced_raga: Optional[str] = None) -> 
             raga = "Yaman"
 
     return raga, RAGAS[raga]
+
+
+def pick_song_raga(raw_lyrics: str, forced_raga: Optional[str] = None) -> Optional[str]:
+    """
+    Determine a unified Song-Level Primary Raga when the lyrics are in an Indic
+    classical/Bollywood idiom (where a single Raga governs both Mukhda and Antara),
+    while allowing English multi-section songs to modulate across sections.
+    """
+    if forced_raga and forced_raga in RAGAS:
+        return forced_raga
+    norm = transliterate_devanagari(raw_lyrics)
+    if is_indic_text(norm):
+        sig_raga = _score_indic_raga_signatures(norm)
+        if sig_raga:
+            return sig_raga
+        r_name, _ = pick_raga(norm, label="Song")
+        return r_name
+    return None
 
 
 # ==============================================================================
@@ -516,24 +704,55 @@ FUNCTION_WORDS = {
     "at", "by", "from", "as", "into", "is", "are", "was", "were", "be", "been",
     "it", "its", "my", "your", "our", "their", "his", "her", "me", "you", "we",
     "they", "i", "that", "this", "what", "where", "when", "who",
+} | HINDI_FUNCTION_WORDS
+
+TARANA_SARGAM_WORDS = {
+    "dheem", "dhim", "ta", "na", "de", "re", "dhir", "noom", "num", "tana",
+    "dere", "da", "ni", "ri", "ga", "ma", "pa", "dha", "sa", "sapta", "suran",
 }
 
+_INDIC_PHONETIC_RE = re.compile(r"(aa|ee|oo|ai|au|kh|gh|chh|jh|th|dh|ph|bh|sh)")
 
-def syllables(word: str) -> int:
-    """Accurate English poetic syllable counter."""
-    w = re.sub(r"[^a-z]", "", word.lower())
+
+def _is_likely_indic_word(w: str) -> bool:
+    """Heuristic check if a single Romanized word follows Hindi/Sanskrit phonetics."""
+    if w in HINDI_FUNCTION_WORDS or w in TARANA_SARGAM_WORDS:
+        return True
+    if _INDIC_PHONETIC_RE.search(w):
+        return True
+    for vocab in INDIC_RAGA_SIGNATURES.values():
+        if w in vocab:
+            return True
+    return False
+
+
+def syllables(word: str, indic_mode: Optional[bool] = None) -> int:
+    """
+    Accurate English & Hindi/Sanskrit (Laghu-Guru) poetic syllable counter.
+    In Indic mode, final '-e' is a pronounced long vowel (ए matra) and is NOT stripped.
+    """
+    word_norm = transliterate_devanagari(word)
+    w = re.sub(r"[^a-z]", "", word_norm.lower())
     if not w:
         return 1
+    if indic_mode is None:
+        indic_mode = _is_likely_indic_word(w)
+
+    if indic_mode:
+        # In Romanized Hindi, vowel runs (a, aa, i, ee, u, oo, e, ai, o, au) map directly to Aksharas ('y' is consonant य)
+        vowel_runs = re.findall(r"(?:aa|ee|oo|ai|au|[aeiou])+", w)
+        return max(1, len(vowel_runs))
+
     if len(w) <= 3:
         return 1
 
-    # Handle common compound silent-e patterns ('somewhere', 'someone', 'something', 'sometimes', 'lonely', 'lately')
+    # Handle common English compound silent-e patterns ('somewhere', 'someone', 'something', 'lonely')
     for prefix in ("some", "where", "there", "here", "home", "lone", "late", "safe", "time", "life", "love"):
         if w.startswith(prefix) and len(w) > len(prefix) + 1:
             w = prefix[:-1] + w[len(prefix):]
             break
 
-    # Remove silent trailing 'e', 'es', 'ed' (except after t/d for ed, or s/z/x/ch/sh for es)
+    # Remove English silent trailing 'e', 'es', 'ed'
     if w.endswith("e") and not w.endswith("le") and not w.endswith("ee"):
         w = w[:-1]
     elif w.endswith("ed") and len(w) > 4 and w[-3] not in "td":
@@ -545,30 +764,70 @@ def syllables(word: str) -> int:
     count = len(vowel_runs)
 
     # Handle syllabic 'le' at end of word (e.g., 'gentle', 'little')
-    if word.lower().endswith("le") and len(word) > 2 and word.lower()[-3] not in "aeiouy":
+    if word_norm.lower().endswith("le") and len(word_norm) > 2 and word_norm.lower()[-3] not in "aeiouy":
         count += 1
 
     return max(1, count)
 
 
-def word_beats(word: str, is_line_end: bool, is_section_end: bool) -> float:
+def _extract_dominant_vowel(word: str) -> str:
+    """Extract primary vowel class ('aa', 'ee', 'oo', 'e', 'o') for dynamic vocal formant shaping."""
+    w = re.sub(r"[^a-z]", "", transliterate_devanagari(word).lower())
+    if "aa" in w or "a" in w:
+        if "ee" in w or (w.endswith("i") and "aa" not in w):
+            return "ee"
+        if "oo" in w or "u" in w and "aa" not in w:
+            return "oo"
+        if w.endswith("e") or "ai" in w:
+            return "e"
+        if "o" in w or "au" in w:
+            return "o"
+        return "aa"
+    if "ee" in w or "i" in w or "y" in w:
+        return "ee"
+    if "oo" in w or "u" in w:
+        return "oo"
+    if "o" in w:
+        return "o"
+    if "e" in w:
+        return "e"
+    return "aa"
+
+
+def word_beats(
+    word: str,
+    is_line_end: bool,
+    is_section_end: bool,
+    indic_mode: bool = False,
+    is_tarana: bool = False,
+) -> float:
     """
-    Compute the musical duration of a word in *beats* (matras) so that
-    every word locks tightly to the Tala rhythmic grid.
+    Compute the musical duration of a word in *beats* (matras) using Laghu-Guru
+    prosodic weighting so that every word locks tightly to the Tala rhythmic grid.
     """
-    clean = re.sub(r"[^a-z']", "", word.lower())
-    s = syllables(clean)
+    clean = re.sub(r"[^a-z']", "", transliterate_devanagari(word).lower())
+    if is_tarana or clean in ("dheem", "dhim", "ta", "dhir", "noom", "tana", "dere"):
+        if is_section_end:
+            return 1.5
+        if is_line_end or clean in ("dheem", "noom"):
+            return 1.0
+        return 0.25 if clean in ("ta", "na", "de", "re", "dhir") else 0.5
+
+    s = syllables(clean, indic_mode=indic_mode)
     is_func = clean in FUNCTION_WORDS
+    has_guru_vowel = bool(re.search(r"(aa|ee|oo|ai|au)", clean)) or (indic_mode and clean.endswith(("e", "o")))
 
     if is_section_end:
         return 2.0
     if is_line_end:
-        return 1.5 if s >= 2 else 1.0
+        return 1.5 if (s >= 2 or has_guru_vowel) else 1.0
 
     if s == 1:
-        return 0.5 if is_func else 0.5
+        if is_func:
+            return 0.5
+        return 1.0 if has_guru_vowel else 0.5
     elif s == 2:
-        return 1.0
+        return 0.5 if is_func else (1.5 if (has_guru_vowel and clean.endswith(("oon", "aan", "aaye", "aale"))) else 1.0)
     elif s == 3:
         return 1.5
     else:
@@ -578,8 +837,8 @@ def word_beats(word: str, is_line_end: bool, is_section_end: bool) -> float:
 def note_duration(word: str, tempo: float, bpm: float = 84.0) -> float:
     """Convert word syllable count into beat-synchronized duration in seconds."""
     beat_sec = 60.0 / max(40.0, bpm)
-    s = syllables(word)
-    clean = re.sub(r"[^a-z']", "", word.lower())
+    clean = re.sub(r"[^a-z']", "", transliterate_devanagari(word).lower())
+    s = syllables(clean)
     if s <= 1:
         beats = 0.5 if clean in FUNCTION_WORDS else 0.5
     elif s == 2:
@@ -603,6 +862,43 @@ class NoteEvent:
     accent: float = 0.85
     line_idx: int = 0
     sub_notes: List[Tuple[str, float]] = field(default_factory=list)
+    vowel: str = "aa"
+
+
+def _step_along_raga_grammar(
+    current_note: str,
+    direction: int,
+    step: int,
+    raga: Dict,
+) -> str:
+    """
+    Move `step` scale degrees in `direction` (+1 ascending, -1 descending)
+    strictly following the Raga's `aaroha` (ascending) or `avaroha` (descending)
+    swara grammar across Mandra, Madhya, and Taar saptaks.
+    """
+    notes: List[str] = raga["notes"]
+    if direction == 0 or step == 0:
+        return current_note
+
+    grammar_base = raga.get("aaroha" if direction > 0 else "avaroha", notes)
+    # Build ordered directional scale subset within `notes`
+    allowed_classes = {sw.strip(". '") for sw in grammar_base}
+    directional_scale = [n for n in notes if n.strip(". '") in allowed_classes]
+    if not directional_scale:
+        directional_scale = list(notes)
+
+    if current_note in directional_scale:
+        cur_i = directional_scale.index(current_note)
+    else:
+        # Snap to nearest allowed note in `notes`
+        base_i = notes.index(current_note) if current_note in notes else 0
+        cur_i = min(
+            range(len(directional_scale)),
+            key=lambda k: abs(notes.index(directional_scale[k]) - base_i),
+        )
+
+    target_i = max(0, min(len(directional_scale) - 1, cur_i + direction * step))
+    return directional_scale[target_i]
 
 
 def build_sequence(
@@ -610,10 +906,15 @@ def build_sequence(
     bpm: float = 84.0,
     forced_raga: Optional[str] = None,
     motif_cache: Optional[Dict[str, List[NoteEvent]]] = None,
+    forced_tala: Optional[str] = None,
 ) -> Tuple[List[Tuple[str, str, float]], List[NoteEvent], str, Dict]:
     """
     Build both the classic `(word, note, dur)` sequence and rich `NoteEvent`
-    phrasing sequence for a song section, locked to the Tala beat grid.
+    phrasing sequence for a song section, locked to the Tala beat grid with:
+      - Authentic Asthayi (Mukhda in Purvang-Madhya) vs Antara (Verse/Bridge in Uttarang) register contrast
+      - Directional Aaroha / Avaroha scale stepping & consonant emotional leaps
+      - Laghu-Guru Hindi/English prosody & fast Drut Tarana articulation
+      - Tala-locked Vibhag / Sam bar boundary padding
     """
     raga_name, raga = pick_raga(section["text"], section["label"], forced_raga=forced_raga)
     notes: List[str] = raga["notes"]
@@ -622,14 +923,23 @@ def build_sequence(
     andolan_notes = set(raga.get("andolan", []))
     pakads: List[List[str]] = raga.get("pakad", [])
 
+    tala_name = forced_tala if (forced_tala and forced_tala in ("Keherwa", "Teental", "Dadra", "Rupak")) else raga.get("default_tala", "Keherwa")
+    tala_quantum_map = {"Dadra": 6.0, "Rupak": 7.0, "Keherwa": 4.0, "Teental": 4.0}
+    bar_quantum = tala_quantum_map.get(tala_name, 4.0)
+
     beat_sec = 60.0 / max(40.0, bpm)
     lbl_lower = section["label"].lower()
-    is_chorus = "chorus" in lbl_lower or "hook" in lbl_lower or "refrain" in lbl_lower
-    is_bridge = "bridge" in lbl_lower
-    is_outro = "outro" in lbl_lower or "finale" in lbl_lower
+    is_chorus = "chorus" in lbl_lower or "hook" in lbl_lower or "refrain" in lbl_lower or "mukhda" in lbl_lower
+    is_bridge = "bridge" in lbl_lower or "antara" in lbl_lower
+    is_verse = "verse" in lbl_lower
+    is_outro = "outro" in lbl_lower or "finale" in lbl_lower or "tarana" in lbl_lower
+
+    indic_mode = is_indic_text(section["text"])
+    sec_words_lower = {re.sub(r"[^a-z']", "", w.lower()) for w in section["text"].split()}
+    is_tarana_sec = "tarana" in lbl_lower or len(sec_words_lower & {"dheem", "dhir", "noom", "tana", "sapta"}) >= 2
 
     # Check if we already composed a melodic motif for identical chorus text
-    cache_key = f"{raga_name}::{section['text'].strip().lower()}"
+    cache_key = f"{raga_name}::{tala_name}::{section['text'].strip().lower()}"
     if is_chorus and motif_cache is not None and cache_key in motif_cache:
         cached_events = []
         for ev in motif_cache[cache_key]:
@@ -645,6 +955,7 @@ def build_sequence(
                 accent=min(1.0, ev.accent * 1.06),  # Final chorus sings with heightened intensity
                 line_idx=ev.line_idx,
                 sub_notes=list(ev.sub_notes),
+                vowel=ev.vowel,
             ))
         legacy_seq = [(e.word, e.note, round(e.dur, 3)) for e in cached_events if not e.is_rest]
         return legacy_seq, cached_events, raga_name, raga
@@ -654,24 +965,30 @@ def build_sequence(
     samvadi_idx = notes.index(samvadi) if samvadi in notes else max(0, len(notes) - 3)
     pa_idx = notes.index("Pa") if "Pa" in notes else vadi_idx
     sa_upper_idx = notes.index("Sa'") if "Sa'" in notes else len(notes) - 1
+    maxi = len(notes) - 1
 
     lines: List[str] = section.get("lines") or [section["text"]]
     events: List[NoteEvent] = []
     legacy_seq: List[Tuple[str, str, float]] = []
 
-    # Starting note depends on section role (Asthayi starts near Sa/Vadi; Antara/Chorus climbs higher)
-    idx = vadi_idx if is_chorus else (pa_idx if is_bridge else sa_idx)
-    maxi = len(notes) - 1
+    # Authentic Hindustani & Bollywood Register Architecture:
+    # - Chorus / Mukhda (Asthayi): Anchors in Purvang/Madhya around Vadi & Sa
+    # - Verse / Bridge (Antara): Climbs into Uttarang (Pa .. Sa' .. Re') before resolving down
+    if is_chorus:
+        idx = vadi_idx
+    elif is_bridge or is_verse:
+        idx = pa_idx if line_count_ge_2(lines) else sa_idx
+    else:
+        idx = sa_idx
 
     for line_i, line in enumerate(lines):
-        raw_words = [w for w in line.split() if re.sub(r"[^a-zA-Z0-9']", "", w)]
+        norm_line = transliterate_devanagari(line)
+        raw_words = [w for w in norm_line.split() if re.sub(r"[^a-zA-Z0-9']", "", w)]
         if not raw_words:
             continue
 
         line_beats_accum = 0.0
         n_w = len(raw_words)
-
-        # Choose a characteristic Pakad motif to inspire the start of lines 0 and 2
         active_pakad = pakads[line_i % len(pakads)] if pakads else []
 
         for w_i, word in enumerate(raw_words):
@@ -681,75 +998,100 @@ def build_sequence(
 
             is_line_end = (w_i == n_w - 1)
             is_sec_end = is_line_end and (line_i == len(lines) - 1)
-            s = syllables(clean)
-            is_func = clean in FUNCTION_WORDS
+            s = syllables(clean, indic_mode=indic_mode)
+            is_func = (clean in FUNCTION_WORDS) and not (is_tarana_sec and clean in TARANA_SARGAM_WORDS)
+            dom_vowel = _extract_dominant_vowel(clean)
 
-            beats = word_beats(clean, is_line_end, is_sec_end)
+            beats = word_beats(clean, is_line_end, is_sec_end, indic_mode=indic_mode, is_tarana=is_tarana_sec)
             line_beats_accum += beats
             dur = beats * beat_sec
 
-            # Melodic contour with phrasing arc (Arch contour per line + Pakad attraction)
+            # Melodic contour with phrasing arc, Pakad attraction, and Asthayi-Antara register contrast
             line_progress = w_i / max(1, n_w - 1)
+            word_hash = int(hashlib.md5(f"{clean}_{line_i}_{w_i}".encode("utf-8")).hexdigest()[:4], 16)
+
             if w_i < len(active_pakad) and (line_i % 2 == 0) and w_i <= 2 and active_pakad[w_i] in notes:
                 idx = notes.index(active_pakad[w_i])
             elif is_sec_end:
-                # Section resolution lands on Sa (or Vadi in Bridge)
+                # Section resolution lands on Sa (or Vadi in Bridge to lead back into Chorus)
                 idx = vadi_idx if is_bridge else sa_idx
             elif is_line_end:
-                # Line cadence resolves to Vadi (open phrase on odd lines) or Sa/Pa (closed phrase on even lines)
-                if line_i % 2 == 0:
+                # Line cadence: open phrase on odd lines (Vadi/Pa/Sa'), closed phrase on even lines (Sa/Vadi)
+                if (is_bridge or is_verse) and line_i == 0:
+                    idx = sa_upper_idx
+                elif line_i % 2 == 0:
                     idx = vadi_idx if abs(idx - vadi_idx) <= 4 else pa_idx
                 else:
-                    idx = sa_idx if idx < pa_idx else (sa_upper_idx if is_chorus and line_i == 1 else pa_idx)
+                    idx = sa_idx if idx <= pa_idx else vadi_idx
             else:
-                # Melodic arch within the line: ascend in first half, descend toward cadence in second half
-                word_hash = int(hashlib.md5(clean.encode("utf-8")).hexdigest()[:4], 16)
-                step = 1 if (s == 1 or is_func) else (2 if word_hash % 3 == 0 else 1)
-
-                if line_progress < 0.55:
-                    # Ascending arch toward Vadi / Samvadi / Sa' (higher peak in Chorus & Bridge)
-                    target = sa_upper_idx if (is_chorus or is_bridge) else max(vadi_idx, pa_idx)
-                    direction = 1 if idx < target else (-1 if word_hash % 2 == 0 else 1)
+                # Determine target peak according to Asthayi (Purvang-Madhya) vs Antara (Uttarang)
+                if is_bridge or (is_verse and line_i < len(lines) - 1):
+                    peak_idx = min(maxi, sa_upper_idx + (1 if line_i == 1 else 0))
+                elif is_chorus:
+                    peak_idx = max(vadi_idx, pa_idx, min(maxi, samvadi_idx))
                 else:
-                    # Descending arch back toward Vadi / Sa
-                    target = vadi_idx if line_i % 2 == 0 else sa_idx
-                    direction = -1 if idx > target else (1 if idx < target else 0)
+                    peak_idx = max(vadi_idx, pa_idx)
 
-                idx = max(0, min(maxi, idx + direction * step))
+                if line_progress < 0.58:
+                    direction = 1 if idx < peak_idx else (-1 if word_hash % 3 == 0 else 0)
+                else:
+                    cadence_target = vadi_idx if line_i % 2 == 0 else sa_idx
+                    direction = -1 if idx > cadence_target else (1 if idx < cadence_target else 0)
+
+                # Consonant leaps (2 or 3 scale steps) on emotive content words; stepwise on function words
+                if is_func:
+                    step = 1 if word_hash % 2 == 0 else 0
+                elif s >= 2 and word_hash % 3 == 0:
+                    step = 2
+                elif not is_func and w_i == 1 and abs(peak_idx - idx) >= 3:
+                    step = 2
+                else:
+                    step = 1
+
+                next_sw = _step_along_raga_grammar(notes[idx], direction, step, raga)
+                idx = notes.index(next_sw) if next_sw in notes else max(0, min(maxi, idx + direction * step))
 
             primary_note = notes[idx]
 
-            # Build melismatic sub-notes (Swara Vistara) for multi-syllable content words
+            # Build melismatic sub-notes (Swara Vistara / Murki / Khatka) for multi-syllable or Guru content words
             sub_notes: List[Tuple[str, float]] = []
-            if s >= 2 and not is_func and beats >= 1.0:
+            if not is_func and beats >= 1.0 and (s >= 2 or beats >= 1.5):
                 neighbor_dir = -1 if (is_line_end or line_progress > 0.6) else 1
-                neighbor_idx = max(0, min(maxi, idx + neighbor_dir))
-                if neighbor_idx == idx:
-                    neighbor_idx = max(0, idx - 1)
-                neighbor_note = notes[neighbor_idx]
+                neighbor_note = _step_along_raga_grammar(primary_note, neighbor_dir, 1, raga)
+                if neighbor_note == primary_note:
+                    neighbor_note = notes[max(0, idx - 1)]
+                neighbor_idx = notes.index(neighbor_note) if neighbor_note in notes else idx
 
-                if s == 2 or beats == 1.0:
-                    sub_notes = [(primary_note, dur * 0.62), (neighbor_note, dur * 0.38)]
+                if s == 2 and beats <= 1.0:
+                    sub_notes = [(primary_note, dur * 0.60), (neighbor_note, dur * 0.40)]
                     idx = neighbor_idx
                 else:
-                    # 3+ syllables: graceful 3-note ornament (e.g. Ga -> ma -> Ga or Sa -> Re -> Ga)
-                    third_idx = idx if is_line_end else max(0, min(maxi, neighbor_idx + neighbor_dir))
-                    if third_idx == neighbor_idx:
-                        third_idx = idx
+                    # 3-note classical ornament (e.g. Murki / Gamak turn: Ga -> ma -> Ga or Pa -> Dha -> ni)
+                    third_note = (
+                        primary_note
+                        if (is_line_end or word_hash % 2 == 0)
+                        else _step_along_raga_grammar(neighbor_note, neighbor_dir, 1, raga)
+                    )
+                    third_idx = notes.index(third_note) if third_note in notes else idx
                     sub_notes = [
-                        (primary_note, dur * 0.45),
+                        (primary_note, dur * 0.44),
                         (neighbor_note, dur * 0.30),
-                        (notes[third_idx], dur * 0.25),
+                        (notes[third_idx], dur * 0.26),
                     ]
                     idx = third_idx
             else:
                 sub_notes = [(primary_note, dur)]
 
-            # Expressive articulations
-            is_glide = (clean[0] in "aeiouywhmlrn") or (s >= 2) or is_line_end
-            has_kan = (not is_func) and (w_i % 2 == 0)
-            has_andolan = (primary_note in andolan_notes) or (dur >= beat_sec * 1.0)
-            accent = 0.72 if is_func else (0.98 if is_chorus else 0.88)
+            # Expressive articulations (Anagat pickup words get lighter accent; Sam/Vadi words get Pukar accent)
+            is_glide = (not is_tarana_sec) and ((clean[0] in "aeiouywhmlrnbdg") or (s >= 2) or is_line_end)
+            has_kan = (not is_func) and (w_i % 2 == 0 or is_tarana_sec)
+            has_andolan = (primary_note in andolan_notes) or (dur >= beat_sec * 0.85)
+            if is_func:
+                accent = 0.64 if w_i == 0 else 0.68
+            elif is_chorus:
+                accent = 0.98 if (primary_note == vadi or w_i in (1, 2)) else 0.90
+            else:
+                accent = 0.92 if primary_note in (vadi, "Sa'", "Pa") else 0.84
 
             ev = NoteEvent(
                 word=word,
@@ -763,22 +1105,21 @@ def build_sequence(
                 accent=accent,
                 line_idx=line_i,
                 sub_notes=sub_notes,
+                vowel=dom_vowel,
             )
             events.append(ev)
             legacy_seq.append((word, primary_note, round(dur, 3)))
 
-        # Pad the end of each poetic line to the next 4-beat (or 2-beat) Tala bar boundary!
-        # This guarantees that the next poetic line enters squarely on the Tabla beat!
-        bar_quantum = 4.0
+        # Pad the end of each poetic line to the active Tala's Vibhag / Sam boundary!
         remainder = line_beats_accum % bar_quantum
         if remainder > 1e-4:
             pad_beats = bar_quantum - remainder
         else:
             pad_beats = 1.0  # Give a 1-beat breath if line already filled the bar
 
-        # Split pad into extra sustain on the line-ending word + a natural breath rest
+        # Split pad into extra sustain on the line-ending word + a natural breath rest (with Jawab fill room)
         if events and not events[-1].is_rest:
-            sustain_add_beats = min(pad_beats * 0.5, 1.0)
+            sustain_add_beats = min(pad_beats * 0.45, 1.0)
             rest_beats = pad_beats - sustain_add_beats
             if sustain_add_beats > 0:
                 add_sec = sustain_add_beats * beat_sec
@@ -794,7 +1135,7 @@ def build_sequence(
         if rest_beats > 0.05:
             events.append(NoteEvent(
                 word="[breath]",
-                note="Sa",
+                note=vadi if (line_i % 2 == 0 and vadi in notes) else "Sa",
                 dur=rest_beats * beat_sec,
                 beats=rest_beats,
                 is_rest=True,
@@ -805,6 +1146,11 @@ def build_sequence(
         motif_cache[cache_key] = list(events)
 
     return legacy_seq, events, raga_name, raga
+
+
+def line_count_ge_2(lines: List[str]) -> bool:
+    """Helper to check if a section has 2 or more non-empty lines."""
+    return len([ln for ln in lines if ln.strip()]) >= 2
 
 
 # ==============================================================================
@@ -858,9 +1204,10 @@ def render_expressive_phrase(
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Render a section's NoteEvents as a continuous-phase expressive performance
-    with true Meend (pitch glides), Kan Swara (grace notes), Andolan (microtonal
-    oscillation), Bansuri breath turbulence, Bowed Sarangi formant warmth, and
-    Sitar Jawari pluck accents.
+    with true Meend (pitch glides), Kan Swara (grace notes), Pukar vocal scoop,
+    Andolan/Gamaka microtonal oscillation, dynamic Vowel-Formant shaping
+    (/aa/, /ee/, /oo/, /e/, /o/), Jawab-Sawal call-and-response breath fills,
+    Bansuri breath turbulence, Bowed Sarangi warmth, and Sitar Jawari plucks.
     Returns (stereo_left, stereo_right).
     """
     if rng is None:
@@ -869,9 +1216,10 @@ def render_expressive_phrase(
     notes_list = raga["notes"]
     andolan_set = set(raga.get("andolan", []))
 
-    # Expand NoteEvents into sub-note segments
+    # Expand NoteEvents into sub-note segments carrying vowel formant identity
     segments: List[Dict] = []
     for ev in events:
+        ev_vowel = getattr(ev, "vowel", "aa") or "aa"
         if ev.is_rest:
             segments.append({
                 "freq": freqs.get(ev.note, freqs["Sa"]),
@@ -883,6 +1231,7 @@ def render_expressive_phrase(
                 "has_andolan": False,
                 "accent": 0.0,
                 "is_sub": False,
+                "vowel": ev_vowel,
             })
         else:
             subs = ev.sub_notes if ev.sub_notes else [(ev.note, ev.dur)]
@@ -895,9 +1244,10 @@ def render_expressive_phrase(
                     "is_rest": False,
                     "is_glide": True if s_i > 0 else ev.is_glide,
                     "has_kan": ev.has_kan and (s_i == 0),
-                    "has_andolan": (sw in andolan_set) or (s_dur >= 0.32),
-                    "accent": ev.accent * (0.94 if s_i > 0 else 1.0),
+                    "has_andolan": (sw in andolan_set) or (s_dur >= 0.26),
+                    "accent": ev.accent * (0.92 if s_i > 0 else 1.0),
                     "is_sub": (s_i > 0),
+                    "vowel": ev_vowel,
                 })
 
     total_samples = sum(max(1, int(round(seg["dur"] * sr))) for seg in segments)
@@ -908,6 +1258,11 @@ def render_expressive_phrase(
     amp_curve = np.zeros(total_samples, dtype=np.float64)
     chiff_curve = np.zeros(total_samples, dtype=np.float64)
     sitar_track = np.zeros(total_samples, dtype=np.float64)
+    jawab_track = np.zeros(total_samples, dtype=np.float64)
+
+    # Vowel weight envelopes for dynamic formant articulation
+    vowel_keys = ("aa", "ee", "oo", "e", "o")
+    vowel_masks: Dict[str, np.ndarray] = {vk: np.zeros(total_samples, dtype=np.float64) for vk in vowel_keys}
 
     pos = 0
     prev_freq = freqs.get("Sa", 261.63)
@@ -923,10 +1278,22 @@ def render_expressive_phrase(
         f_target = seg["freq"]
         next_is_rest = (i == len(segments) - 1) or segments[i + 1]["is_rest"]
         next_is_glide = (not next_is_rest) and segments[i + 1]["is_glide"]
+        v_key = seg.get("vowel", "aa")
+        if v_key not in vowel_masks:
+            v_key = "aa"
+        vowel_masks[v_key][pos:pos + n] = 1.0
 
         if seg["is_rest"]:
             freq_curve[pos:pos + n] = prev_freq
             amp_curve[pos:pos + n] = 0.0
+            # Jawab-Sawal (Call-and-Response): during line breaths >= 0.48s, play a delicate
+            # Sitar/Harp echo on the cadence note so the phrase breathes with classical dialogue
+            if seg["dur"] >= 0.48 and n > int(0.25 * sr):
+                j_offset = int(0.10 * sr)
+                j_len = min(int(0.65 * sr), n - j_offset)
+                if j_len > int(0.08 * sr):
+                    jawab_pluck = synth_sitar_pluck(f_target, j_len / sr, sr=sr) * 0.34
+                    jawab_track[pos + j_offset:pos + j_offset + j_len] += jawab_pluck[:j_len]
             prev_was_rest = True
             pos += n
             continue
@@ -934,125 +1301,167 @@ def render_expressive_phrase(
         t_local = np.arange(n, dtype=np.float64) / sr
         f_seg = np.full(n, f_target, dtype=np.float64)
 
-        # 1. Meend (Glissando) from previous note or Kan Swara grace inflection
+        # 1. Meend (Glissando), Kan Swara (upper grace), or Pukar (vocal onset scoop)
         if not prev_was_rest and seg["is_glide"] and abs(f_target - prev_freq) > 1.0:
-            # True S-curve Meend over 70-130ms
-            glide_dur = min(0.12 if seg["is_sub"] else 0.085, seg["dur"] * 0.45)
+            # Expressive S-curve Meend over 85-150ms
+            glide_dur = min(0.14 if seg["is_sub"] else 0.105, seg["dur"] * 0.48)
             g_n = max(1, int(glide_dur * sr))
             s_curve = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, g_n)))
             f_seg[:g_n] = prev_freq + (f_target - prev_freq) * s_curve
         elif seg["has_kan"]:
-            # Kan Swara: rapid 40ms grace note from upper scale neighbor
+            # Kan Swara: rapid 45ms grace inflection from upper scale neighbor
             sw = seg["swara"]
             sw_idx = notes_list.index(sw) if sw in notes_list else 0
             kan_sw = notes_list[min(len(notes_list) - 1, sw_idx + 1)]
             f_kan = freqs.get(kan_sw, f_target * 1.125)
-            k_n = min(int(0.042 * sr), n // 3)
+            k_n = min(int(0.046 * sr), n // 3)
             if k_n > 1:
                 s_curve = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, k_n)))
                 f_seg[:k_n] = f_kan + (f_target - f_kan) * s_curve
+        else:
+            # Subtle Pukar vocal scoop (-35 cents settling into target over 40ms)
+            p_n = min(int(0.040 * sr), n // 3)
+            if p_n > 1:
+                s_curve = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, p_n)))
+                f_start = f_target * (2.0 ** (-35.0 / 1200.0))
+                f_seg[:p_n] = f_start + (f_target - f_start) * s_curve
 
-        # 2. Andolan & Expressive Vibrato on sustained notes
-        if seg["has_andolan"]:
-            is_komal_andolan = seg["swara"] in ("re", "ga", "dha", "ni")
-            vib_rate = 4.3 if is_komal_andolan else 5.4
-            vib_depth = 0.013 if is_komal_andolan else 0.0075
-            vib_env = np.clip((t_local - 0.08) / 0.14, 0.0, 1.0)
-            # Fade out vibrato slightly at very end of note
-            f_seg *= 1.0 + vib_depth * vib_env * np.sin(2.0 * np.pi * vib_rate * t_local)
+        # 2. Continuous Andolan & Gamaka microtonal pitch modulation (playback vocal expressiveness)
+        is_komal_andolan = seg["swara"].strip(". '") in ("re", "ga", "dha", "ni")
+        vib_rate = 4.6 if is_komal_andolan else 5.5
+        vib_depth = (0.018 if is_komal_andolan else 0.011) if seg["has_andolan"] else 0.0065
+        vib_env = np.clip((t_local - 0.04) / 0.11, 0.0, 1.0)
+        gamak_mod = (
+            np.sin(2.0 * np.pi * vib_rate * t_local)
+            + 0.30 * np.sin(2.0 * np.pi * (vib_rate * 1.45) * t_local + 0.6)
+        )
+        f_seg *= 1.0 + vib_depth * vib_env * gamak_mod
 
         freq_curve[pos:pos + n] = f_seg
 
-        # 3. Legato-aware Amplitude Envelope + Breath Chiff
-        env_seg = np.ones(n, dtype=np.float64) * seg["accent"]
+        # 3. Dynamic Phrasing Envelope (natural vocal swell + crisp articulation dip for higher crest factor)
+        arch_swell = 0.82 + 0.26 * np.sin(np.pi * np.linspace(0.0, 1.0, n))
+        env_seg = arch_swell * seg["accent"]
         if prev_was_rest:
-            a_n = min(int(0.055 * sr), n // 3)
+            a_n = min(int(0.045 * sr), n // 3)
             if a_n > 1:
                 env_seg[:a_n] *= 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, a_n)))
                 chiff_curve[pos:pos + a_n] = np.sin(np.linspace(0.0, np.pi, a_n)) * seg["accent"]
         elif seg["is_sub"]:
-            # Melisma within a word: seamless legato with subtle 12% breath dip
-            a_n = min(int(0.025 * sr), n // 4)
+            a_n = min(int(0.022 * sr), n // 4)
             if a_n > 1:
-                env_seg[:a_n] *= 0.88 + 0.12 * 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, a_n)))
+                env_seg[:a_n] *= 0.84 + 0.16 * 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, a_n)))
         else:
-            # Articulated syllable transition: 35% tongue/bow dip
-            a_n = min(int(0.032 * sr), n // 4)
+            a_n = min(int(0.030 * sr), n // 4)
             if a_n > 1:
-                env_seg[:a_n] *= 0.65 + 0.35 * 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, a_n)))
-                chiff_curve[pos:pos + a_n] = 0.55 * np.sin(np.linspace(0.0, np.pi, a_n)) * seg["accent"]
+                env_seg[:a_n] *= 0.52 + 0.48 * 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, a_n)))
+                chiff_curve[pos:pos + a_n] = 0.65 * np.sin(np.linspace(0.0, np.pi, a_n)) * seg["accent"]
 
         if next_is_rest:
-            r_n = min(int(0.11 * sr), n // 2)
+            r_n = min(int(0.12 * sr), n // 2)
             if r_n > 1:
                 env_seg[-r_n:] *= 0.5 * (1.0 + np.cos(np.linspace(0.0, np.pi, r_n)))
         elif not next_is_glide:
-            r_n = min(int(0.025 * sr), n // 4)
+            r_n = min(int(0.028 * sr), n // 4)
             if r_n > 1:
-                env_seg[-r_n:] *= 0.68 + 0.32 * 0.5 * (1.0 + np.cos(np.linspace(0.0, np.pi, r_n)))
+                env_seg[-r_n:] *= 0.55 + 0.45 * 0.5 * (1.0 + np.cos(np.linspace(0.0, np.pi, r_n)))
 
         amp_curve[pos:pos + n] = env_seg
 
         # 4. Trigger Sitar Jawari pluck on phrase starts and accented non-sub notes
-        if not seg["is_sub"] and (prev_was_rest or seg["accent"] >= 0.85):
+        if not seg["is_sub"] and (prev_was_rest or seg["accent"] >= 0.86):
             pluck_len = min(int(1.1 * sr), total_samples - pos)
             if pluck_len > int(0.05 * sr):
-                sitar_pluck = synth_sitar_pluck(f_target, pluck_len / sr, sr=sr) * (0.45 * seg["accent"])
+                sitar_pluck = synth_sitar_pluck(f_target, pluck_len / sr, sr=sr) * (0.48 * seg["accent"])
                 sitar_track[pos:pos + pluck_len] += sitar_pluck[:pluck_len]
 
         prev_freq = f_target
         prev_was_rest = False
         pos += n
 
-    # Smooth amp_curve slightly to prevent any micro-zipper artifacts
+    # Smooth amp_curve and vowel masks to prevent any micro-zipper artifacts
     smooth_win = max(3, int(0.004 * sr))
     kernel = np.ones(smooth_win) / smooth_win
     amp_curve = np.convolve(amp_curve, kernel, mode="same")
 
+    vowel_smooth_win = max(5, int(0.018 * sr))
+    v_kernel = np.ones(vowel_smooth_win) / vowel_smooth_win
+    for vk in vowel_keys:
+        vowel_masks[vk] = np.convolve(vowel_masks[vk], v_kernel, mode="same")
+
     # Continuous Phase Integration across the entire section
     phase = 2.0 * np.pi * np.cumsum(freq_curve) / sr
 
-    # --- Instrument A: Concert Bansuri (Warm Bamboo Flute + Breath Turbulence) ---
+    # --- Instrument A: Concert Bansuri (Extended Harmonics h1..h7 + Airy Embouchure Chiff) ---
     h1 = np.sin(phase)
-    h2 = 0.44 * amp_curve * np.sin(2.0 * phase + 0.25)
-    h3 = 0.20 * (amp_curve ** 1.4) * np.sin(3.0 * phase + 0.60)
-    h4 = 0.07 * (amp_curve ** 1.8) * np.sin(4.0 * phase + 1.10)
-    bansuri_core = (h1 + h2 + h3 + h4) / 1.55
+    h2 = 0.48 * amp_curve * np.sin(2.0 * phase + 0.25)
+    h3 = 0.28 * (amp_curve ** 1.2) * np.sin(3.0 * phase + 0.60)
+    h4 = 0.14 * (amp_curve ** 1.4) * np.sin(4.0 * phase + 1.10)
+    h5 = 0.08 * (amp_curve ** 1.5) * np.sin(5.0 * phase + 1.50)
+    h6 = 0.045 * (amp_curve ** 1.6) * np.sin(6.0 * phase + 1.90)
+    h7 = 0.025 * (amp_curve ** 1.7) * np.sin(7.0 * phase + 2.30)
+    bansuri_core = (0.78 * h1 + h2 + h3 + h4 + h5 + h6 + h7) / 1.62
 
-    # Breath turbulence & embouchure chiff (bandpass filtered noise)
+    # Breath turbulence & embouchure chiff (bandpass filtered noise in 1.8 - 6.5 kHz presence band)
     raw_noise = rng.standard_normal(total_samples)
-    sos_breath = signal.butter(2, [1400.0 / (sr / 2), 3800.0 / (sr / 2)], btype="bandpass", output="sos")
+    sos_breath = signal.butter(2, [1800.0 / (sr / 2), 6400.0 / (sr / 2)], btype="bandpass", output="sos")
     breath_noise = signal.sosfilt(sos_breath, raw_noise)
-    breath_layer = breath_noise * (0.028 * amp_curve + 0.065 * chiff_curve) * (1.0 + 0.45 * h1)
+    breath_layer = breath_noise * (0.032 * amp_curve + 0.085 * chiff_curve) * (1.0 + 0.50 * h1)
     bansuri = (bansuri_core + breath_layer) * amp_curve
 
-    # --- Instrument B: Soulful Bowed Sarangi / Solo Cello (Vocal Formant Filtered) ---
+    # --- Instrument B: Dynamic Vowel-Formant Bowed Sarangi / Playback Vocal Lead ---
     bow_raw = np.zeros(total_samples, dtype=np.float64)
-    for h in range(1, 9):
-        sign = 1.0 if h % 2 == 1 else -0.85
-        bow_raw += (sign / (h ** 1.05)) * np.sin(h * phase + 0.17 * h)
-    # Apply vocal formant resonances (F1 ~ 520 Hz, F2 ~ 1420 Hz, F3 ~ 2650 Hz)
-    sos_f1 = signal.butter(2, [380.0 / (sr / 2), 700.0 / (sr / 2)], btype="bandpass", output="sos")
-    sos_f2 = signal.butter(2, [1150.0 / (sr / 2), 1750.0 / (sr / 2)], btype="bandpass", output="sos")
-    sos_f3 = signal.butter(2, [2200.0 / (sr / 2), 3100.0 / (sr / 2)], btype="bandpass", output="sos")
+    for h in range(1, 13):
+        sign = 1.0 if h % 2 == 1 else -0.88
+        bow_raw += (sign / (h ** 0.90)) * np.sin(h * phase + 0.17 * h)
+
+    # Vowel formant table: (F1_lo..F1_hi, F2_lo..F2_hi)
+    vowel_formant_bands = {
+        "aa": ([580.0, 860.0], [1080.0, 1450.0]),
+        "ee": ([270.0, 430.0], [1950.0, 2650.0]),
+        "oo": ([290.0, 450.0], [720.0, 1050.0]),
+        "e":  ([420.0, 600.0], [1650.0, 2200.0]),
+        "o":  ([420.0, 600.0], [820.0, 1180.0]),
+    }
+    formant_sum = np.zeros(total_samples, dtype=np.float64)
+    for vk, (f1_b, f2_b) in vowel_formant_bands.items():
+        mask = vowel_masks[vk]
+        if np.max(mask) > 1e-3:
+            sos_v1 = signal.butter(2, [f1_b[0] / (sr / 2), f1_b[1] / (sr / 2)], btype="bandpass", output="sos")
+            sos_v2 = signal.butter(2, [f2_b[0] / (sr / 2), f2_b[1] / (sr / 2)], btype="bandpass", output="sos")
+            formant_sum += mask * (0.48 * signal.sosfilt(sos_v1, bow_raw) + 0.44 * signal.sosfilt(sos_v2, bow_raw))
+
+    # Singer's formant & upper bow brilliance (2400 - 5400 Hz)
+    sos_f3 = signal.butter(2, [2300.0 / (sr / 2), 4200.0 / (sr / 2)], btype="bandpass", output="sos")
+    sos_f4 = signal.butter(2, [3800.0 / (sr / 2), 6800.0 / (sr / 2)], btype="bandpass", output="sos")
     sarangi = (
-        0.55 * signal.sosfilt(sos_f1, bow_raw)
-        + 0.32 * signal.sosfilt(sos_f2, bow_raw)
-        + 0.15 * signal.sosfilt(sos_f3, bow_raw)
-        + 0.30 * h1
+        formant_sum
+        + 0.28 * signal.sosfilt(sos_f3, bow_raw)
+        + 0.14 * signal.sosfilt(sos_f4, bow_raw)
+        + 0.22 * h1
     ) * amp_curve
 
-    # Blend Bansuri, Sarangi, and Sitar based on section mood/style
+    # Blend Bansuri, Sarangi, Sitar, and Jawab-Sawal call-and-response based on section mood
     mood = raga.get("mood", "peaceful")
     if mood in ("sad", "soulful_sad", "tragic_majestic", "bittersweet"):
-        w_bansuri, w_sarangi, w_sitar = 0.56, 0.44, 0.32
+        w_bansuri, w_sarangi, w_sitar = 0.54, 0.52, 0.36
     elif mood in ("happy", "triumphant", "warm_joy"):
-        w_bansuri, w_sarangi, w_sitar = 0.65, 0.25, 0.45
+        w_bansuri, w_sarangi, w_sitar = 0.62, 0.34, 0.48
     else:
-        w_bansuri, w_sarangi, w_sitar = 0.64, 0.30, 0.36
+        w_bansuri, w_sarangi, w_sitar = 0.60, 0.40, 0.40
 
-    left = w_bansuri * bansuri + w_sarangi * 0.85 * sarangi + w_sitar * 1.15 * sitar_track
-    right = w_bansuri * 0.95 * bansuri + w_sarangi * 1.15 * sarangi + w_sitar * 0.85 * sitar_track
+    left = (
+        w_bansuri * bansuri
+        + w_sarangi * 0.82 * sarangi
+        + w_sitar * 1.15 * sitar_track
+        + 0.45 * jawab_track
+    )
+    right = (
+        w_bansuri * 0.92 * bansuri
+        + w_sarangi * 1.18 * sarangi
+        + w_sitar * 0.82 * sitar_track
+        + 0.95 * jawab_track
+    )
 
     return left, right
 
@@ -1060,7 +1469,7 @@ def render_expressive_phrase(
 def synth_sitar_pluck(freq: float, dur: float, sr: int = SAMPLE_RATE) -> np.ndarray:
     """
     Synthesize a plucked Sitar string with nonlinear Jawari (curved bridge)
-    overtone buzz and frequency-dependent harmonic decay.
+    overtone buzz, Mizrab wire-pick transient (3.5-7.5 kHz), and sympathetic Taraf ring.
     """
     n = max(1, int(dur * sr))
     t = np.arange(n, dtype=np.float64) / sr
@@ -1070,18 +1479,26 @@ def synth_sitar_pluck(freq: float, dur: float, sr: int = SAMPLE_RATE) -> np.ndar
     phase = 2.0 * np.pi * np.cumsum(f_t) / sr
 
     out = np.zeros(n, dtype=np.float64)
-    for h in range(1, 11):
-        if freq * h >= sr * 0.44:
+    for h in range(1, 15):
+        if freq * h >= sr * 0.45:
             break
-        # Higher harmonics decay faster but shimmer with Jawari modulation
-        decay_rate = 3.2 + 0.85 * h
-        jawari_shimmer = 1.0 + 0.35 * np.sin(2.0 * np.pi * (1.8 + 0.4 * h) * t)
-        amp = (1.0 / (h ** 0.78)) * jawari_shimmer * np.exp(-decay_rate * t)
+        # Higher harmonics shimmer with Jawari bridge grazing modulation
+        decay_rate = 2.8 + 0.72 * h
+        jawari_shimmer = 1.0 + 0.40 * np.sin(2.0 * np.pi * (1.9 + 0.45 * h) * t)
+        amp = (1.0 / (h ** 0.68)) * jawari_shimmer * np.exp(-decay_rate * t)
         out += amp * np.sin(h * phase + 0.3 * h)
 
+    # Sympathetic Taraf high-octave resonance (shimmering 2x and 4x tonic/swara ring)
+    if freq * 4.0 < sr * 0.44:
+        taraf = (
+            0.16 * np.sin(4.0 * phase) * np.exp(-2.2 * t)
+            + 0.09 * np.sin(6.0 * phase + 0.5) * np.exp(-2.8 * t)
+        )
+        out += taraf
+
     # Jawari bridge grazing waveshaper
-    attack = 1.0 - np.exp(-220.0 * t)
-    out = np.tanh(1.65 * out) * attack
+    attack = 1.0 - np.exp(-260.0 * t)
+    out = np.tanh(1.55 * out) * attack
     # Fade end cleanly
     fade = min(int(0.04 * sr), n // 4)
     if fade > 1:
@@ -1161,31 +1578,32 @@ def tanpura_drone_track(
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Generate a continuous Stereo Tanpura drone (Pa/Ma - Sa' - Sa' - .Sa) with
-    authentic Jivari (curved bridge) overtone shimmer.
+    authentic Jivari (curved bridge) upper-harmonic shimmer and de-mudded low-mids.
     """
     left = np.zeros(total_samples, dtype=np.float64)
     right = np.zeros(total_samples, dtype=np.float64)
 
     first_string = f".{drone_swara}" if f".{drone_swara}" in freqs else drone_swara
     string_notes = [first_string, "Sa", "Sa", ".Sa"]
-    string_pans = [0.25, 0.65, 0.35, 0.75]
+    string_pans = [0.22, 0.72, 0.28, 0.78]
 
     pluck_interval = 60.0 / max(45.0, bpm) * 1.25
     string_dur = pluck_interval * 3.8
     n_pluck = int(string_dur * sr)
     t = np.arange(n_pluck, dtype=np.float64) / sr
 
-    # Pre-render the 4 Tanpura strings with Jivari harmonic bloom
+    # Pre-render the 4 Tanpura strings with bright Jivari harmonic bloom (h = 1..12)
     rendered_strings: List[Tuple[np.ndarray, float, float]] = []
     for s_idx, sw in enumerate(string_notes):
         f0 = freqs.get(sw, freqs["Sa"] * 0.5)
         wave_str = np.zeros(n_pluck, dtype=np.float64)
-        for h in range(1, 9):
+        for h in range(1, 13):
             if f0 * h >= sr * 0.45:
                 break
-            # Jivari effect: higher harmonics slowly swell in and out as string grazes the bridge
-            jivari_bloom = 0.6 + 0.4 * np.sin(2.0 * np.pi * (0.35 * h) * t - 0.5 * h)
-            h_amp = (1.0 / (h ** 0.85)) * jivari_bloom * np.exp(-(0.55 + 0.12 * h) * t)
+            # Emphasize Jivari upper harmonics (h >= 3) while keeping fundamental clean
+            jivari_bloom = 0.65 + 0.35 * np.sin(2.0 * np.pi * (0.35 * h) * t - 0.5 * h)
+            low_trim = 0.52 if h <= 2 else 1.0
+            h_amp = low_trim * (1.0 / (h ** 0.72)) * jivari_bloom * np.exp(-(0.52 + 0.10 * h) * t)
             wave_str += h_amp * np.sin(2.0 * np.pi * f0 * h * t + 0.4 * h)
 
         attack = 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, min(int(0.08 * sr), n_pluck // 4))))
@@ -1197,7 +1615,7 @@ def tanpura_drone_track(
         pan = string_pans[s_idx]
         g_l = math.cos(pan * math.pi * 0.5)
         g_r = math.sin(pan * math.pi * 0.5)
-        rendered_strings.append((wave_str * 0.25, g_l, g_r))
+        rendered_strings.append((wave_str * 0.22, g_l, g_r))
 
     step_samples = max(1, int(pluck_interval * sr))
     pos = 0
@@ -1222,8 +1640,9 @@ def symphonic_pad_section(
     intensity: float = 0.6,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Synthesize a lush, warm stereo symphonic string & modal pad supporting
-    the Raga's tonic (.Sa, Sa), fifth/fourth (.Pa/.Ma), and Vadi/Samvadi.
+    Synthesize a lush, airy stereo symphonic string & modal pad supporting
+    the Raga's tonic (Sa, Sa'), fifth/fourth (Pa/Ma), and Vadi/Samvadi, with
+    150-400 Hz low-mid carving so the lead melody and Tabla sit clearly in front.
     """
     if n_samples <= 0:
         return np.zeros(1), np.zeros(1)
@@ -1231,43 +1650,46 @@ def symphonic_pad_section(
     t = np.arange(n_samples, dtype=np.float64) / sr
     drone_sw = raga.get("drone", "Pa")
     vadi_sw = raga.get("vadi", "Ga")
-    # Keep Vadi in Madhya Saptak for warm pad voicing
     vadi_clean = vadi_sw.strip(". '")
-    chord_swaras = [".Sa", f".{drone_sw}", "Sa", drone_sw, vadi_clean]
-    chord_amps = [0.40, 0.30, 0.32, 0.24, 0.18 * intensity]
+    chord_swaras = [".Sa", "Sa", drone_sw, vadi_clean, "Sa'"]
+    chord_amps = [0.20, 0.26, 0.24, 0.22 * intensity, 0.18 * intensity]
 
     left = np.zeros(n_samples, dtype=np.float64)
     right = np.zeros(n_samples, dtype=np.float64)
 
     # Slow breathing LFO
-    breath_l = 0.82 + 0.18 * np.sin(2.0 * np.pi * 0.18 * t)
-    breath_r = 0.82 + 0.18 * np.cos(2.0 * np.pi * 0.18 * t + 0.7)
+    breath_l = 0.80 + 0.20 * np.sin(2.0 * np.pi * 0.18 * t)
+    breath_r = 0.80 + 0.20 * np.cos(2.0 * np.pi * 0.18 * t + 0.7)
 
     for sw, amp in zip(chord_swaras, chord_amps):
         f0 = freqs.get(sw, freqs["Sa"])
-        # 3 detuned ensemble voices (-6 cents, 0, +6 cents)
-        f_det_l = f0 * (2.0 ** (-6.0 / 1200.0))
-        f_det_r = f0 * (2.0 ** (+6.0 / 1200.0))
+        # 3 detuned ensemble voices (-7 cents, 0, +7 cents) with upper string harmonics
+        f_det_l = f0 * (2.0 ** (-7.0 / 1200.0))
+        f_det_r = f0 * (2.0 ** (+7.0 / 1200.0))
 
         voice_l = (
-            np.sin(2.0 * np.pi * f0 * t)
-            + 0.65 * np.sin(2.0 * np.pi * f_det_l * t + 0.8)
-            + 0.30 * np.sin(4.0 * np.pi * f_det_l * t + 1.5)
-            + 0.12 * np.sin(6.0 * np.pi * f0 * t + 2.1)
-        ) * (amp * 0.45)
+            0.65 * np.sin(2.0 * np.pi * f0 * t)
+            + 0.55 * np.sin(2.0 * np.pi * f_det_l * t + 0.8)
+            + 0.42 * np.sin(4.0 * np.pi * f_det_l * t + 1.5)
+            + 0.25 * np.sin(6.0 * np.pi * f0 * t + 2.1)
+            + 0.12 * np.sin(8.0 * np.pi * f0 * t + 0.5)
+        ) * (amp * 0.38)
 
         voice_r = (
-            np.sin(2.0 * np.pi * f0 * t + 0.4)
-            + 0.65 * np.sin(2.0 * np.pi * f_det_r * t + 1.2)
-            + 0.30 * np.sin(4.0 * np.pi * f_det_r * t + 0.3)
-            + 0.12 * np.sin(6.0 * np.pi * f0 * t + 1.7)
-        ) * (amp * 0.45)
+            0.65 * np.sin(2.0 * np.pi * f0 * t + 0.4)
+            + 0.55 * np.sin(2.0 * np.pi * f_det_r * t + 1.2)
+            + 0.42 * np.sin(4.0 * np.pi * f_det_r * t + 0.3)
+            + 0.25 * np.sin(6.0 * np.pi * f0 * t + 1.7)
+            + 0.12 * np.sin(8.0 * np.pi * f0 * t + 2.4)
+        ) * (amp * 0.38)
 
         left += voice_l
         right += voice_r
 
-    left *= breath_l * intensity
-    right *= breath_r * intensity
+    # Carve 150-400 Hz low-mid mud so the pad shimmers without masking the lead or Bayan
+    sos_air = signal.butter(1, 320.0 / (sr / 2), btype="highpass", output="sos")
+    left = (0.35 * left + 0.65 * signal.sosfilt(sos_air, left)) * breath_l * intensity
+    right = (0.35 * right + 0.65 * signal.sosfilt(sos_air, right)) * breath_r * intensity
 
     # Smooth fade in and fade out for the section pad
     fade = min(int(0.45 * sr), n_samples // 3)
@@ -1595,16 +2017,16 @@ def apply_concert_hall_reverb(
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Apply a lush Stereo Concert Hall Reverb using early reflection taps plus
-    stereo cross-coupled feedback delay lines with warm high-frequency damping.
+    stereo cross-coupled feedback delay lines with airy acoustic damping.
     """
     n = len(left)
     if n == 0 or wet <= 0.0:
         return left, right
 
-    # Low-pass filter the reverb send for warm concert hall acoustics (cut harshness > 4.2 kHz)
-    sos_LP = signal.butter(2, 4200.0 / (sr / 2), btype="lowpass", output="sos")
-    send_l = signal.sosfilt(sos_LP, left)
-    send_r = signal.sosfilt(sos_LP, right)
+    # Band-pass reverb send (cut <180 Hz low-mid mud, retain 180-7800 Hz concert hall sheen)
+    sos_send = signal.butter(2, [180.0 / (sr / 2), 7800.0 / (sr / 2)], btype="bandpass", output="sos")
+    send_l = signal.sosfilt(sos_send, left)
+    send_r = signal.sosfilt(sos_send, right)
 
     rev_l = np.zeros(n, dtype=np.float64)
     rev_r = np.zeros(n, dtype=np.float64)
@@ -1631,13 +2053,13 @@ def apply_concert_hall_reverb(
         if d < n:
             rev_r[d:] += gain * (0.75 * send_r[:-d] + 0.25 * send_l[:-d])
 
-    # Smooth the reverb tail with an allpass-like modulation / warm lowpass
-    sos_tail = signal.butter(1, 3200.0 / (sr / 2), btype="lowpass", output="sos")
+    # Smooth the reverb tail while preserving upper-mid presence up to 6.4 kHz
+    sos_tail = signal.butter(1, 6400.0 / (sr / 2), btype="lowpass", output="sos")
     rev_l = signal.sosfilt(sos_tail, rev_l)
     rev_r = signal.sosfilt(sos_tail, rev_r)
 
-    out_l = (1.0 - wet * 0.35) * left + wet * rev_l
-    out_r = (1.0 - wet * 0.35) * right + wet * rev_r
+    out_l = (1.0 - wet * 0.30) * left + wet * rev_l
+    out_r = (1.0 - wet * 0.30) * right + wet * rev_r
     return out_l, out_r
 
 
@@ -1649,20 +2071,26 @@ def master_stereo_bus(
     """
     Studio mastering chain:
       1. Sub-rumble high-pass filter at 28 Hz
-      2. Warm analog tape soft-saturation (`tanh`)
-      3. True-peak normalization to -0.8 dBFS
-      4. Returns interleaved/stacked `(N, 2)` float64 stereo array in `[-1.0, 1.0]`.
+      2. Vocal/Lead presence & air enhancement (1.6 kHz - 9 kHz clarity lift)
+      3. Transparent analog tape soft-saturation (`tanh`, preserving natural Crest Factor)
+      4. True-peak normalization to -0.7 dBFS
+      5. Returns interleaved/stacked `(N, 2)` float64 stereo array in `[-1.0, 1.0]`.
     """
     sos_hp = signal.butter(2, 28.0 / (sr / 2), btype="highpass", output="sos")
     l_clean = signal.sosfilt(sos_hp, left)
     r_clean = signal.sosfilt(sos_hp, right)
 
+    # Subtle studio presence & air lift above 1.6 kHz to match classic Bollywood vocal clarity
+    sos_pres = signal.butter(1, 1600.0 / (sr / 2), btype="highpass", output="sos")
+    l_clean = l_clean + 0.32 * signal.sosfilt(sos_pres, l_clean)
+    r_clean = r_clean + 0.32 * signal.sosfilt(sos_pres, r_clean)
+
     peak_pre = max(np.max(np.abs(l_clean)), np.max(np.abs(r_clean)), 1e-8)
     l_norm = l_clean / peak_pre
     r_norm = r_clean / peak_pre
 
-    # Gentle analog warmth saturation
-    drive = 1.28
+    # Gentle transparent analog warmth saturation (preserving transient Crest Factor ~11-13 dB)
+    drive = 1.05
     l_sat = np.tanh(drive * l_norm) / math.tanh(drive)
     r_sat = np.tanh(drive * r_norm) / math.tanh(drive)
 
@@ -1776,13 +2204,13 @@ def song_to_music(
 ) -> Path:
     """
     Full end-to-end pipeline:
-      1. Parses song into structured sections & poetic lines.
-      2. Analyzes Navarasa emotion per section & assigns Raga + Tala.
-      3. Composes beat-synchronized melody with motif memory, Pakad phrases,
-         and multi-syllable melismas (Swara Vistara).
-      4. Synthesizes Alap intro, continuous-phase Bansuri/Sarangi/Sitar lead,
-         Swarmandal harp glissandi, Symphonic String Pad, Stereo Tanpura Drone,
-         and tonic-tuned Stereo Tabla with Tihai cadences.
+      1. Parses song into structured sections & poetic lines (with Devanagari support).
+      2. Analyzes Navarasa emotion & Indic classical cues to assign Raga + Tala.
+      3. Composes beat-synchronized melody with Asthayi-Antara register contrast,
+         directional Aaroha/Avaroha grammar, motif memory, Pakad phrases, and melismas.
+      4. Synthesizes Alap intro, vowel-formant Bansuri/Sarangi/Sitar lead with
+         Jawab-Sawal call-and-response fills, Swarmandal harp glissandi, Symphonic Pad,
+         Stereo Tanpura Drone, and tonic-tuned Stereo Tabla with Tihai cadences.
       5. Applies Concert Hall Stereo Reverb & studio mastering, and saves MP3.
     """
     global FREQUENCIES
@@ -1791,6 +2219,9 @@ def song_to_music(
 
     sections = parse_song(raw_lyrics)
     motif_cache: Dict[str, List[NoteEvent]] = {}
+
+    # Anchor a unified Song-Level Primary Raga when in Indic/Bollywood classical mode
+    effective_forced_raga = pick_song_raga(raw_lyrics, forced_raga=forced_raga)
 
     if RICH_AVAILABLE and console is not None:
         console.print(
@@ -1810,7 +2241,11 @@ def song_to_music(
     all_seq: List[Tuple[str, str, str, List[NoteEvent]]] = []
 
     # Primary Raga from first section used for introductory Alap & global drone
-    first_raga_name, first_raga = pick_raga(sections[0]["text"], sections[0]["label"], forced_raga=forced_raga)
+    first_raga_name, first_raga = pick_raga(
+        sections[0]["text"],
+        sections[0]["label"],
+        forced_raga=effective_forced_raga,
+    )
 
     if include_alap:
         alap_l, alap_r = build_alap_intro(first_raga, FREQUENCIES, bpm=bpm, sr=sr)
@@ -1821,13 +2256,15 @@ def song_to_music(
         legacy_seq, events, raga_name, raga = build_sequence(
             sec,
             bpm=bpm,
-            forced_raga=forced_raga,
+            forced_raga=effective_forced_raga,
             motif_cache=motif_cache,
+            forced_tala=forced_tala,
         )
         tala_name = forced_tala if (forced_tala in TALA_PATTERNS) else raga.get("default_tala", "Keherwa")
         lbl_lower = sec["label"].lower()
-        is_chorus = "chorus" in lbl_lower or "hook" in lbl_lower or "refrain" in lbl_lower
-        is_bridge = "bridge" in lbl_lower
+        is_chorus = "chorus" in lbl_lower or "hook" in lbl_lower or "refrain" in lbl_lower or "mukhda" in lbl_lower
+        is_bridge = "bridge" in lbl_lower or "antara" in lbl_lower
+        is_outro = "outro" in lbl_lower or "finale" in lbl_lower or "tarana" in lbl_lower
 
         if RICH_AVAILABLE and console is not None:
             console.print(
@@ -1839,7 +2276,7 @@ def song_to_music(
         else:
             print(f"  [{sec['label']}]  raga: {raga_name}  mood: {raga['mood']}  tala: {tala_name}")
 
-        # 1. Expressive Lead (Bansuri + Sarangi + Sitar Jawari plucks)
+        # 1. Expressive Lead (Bansuri + Vowel-Formant Sarangi + Sitar Jawari + Jawab-Sawal)
         lead_l, lead_r = render_expressive_phrase(events, raga, FREQUENCIES, sr=sr)
         n_sec = len(lead_l)
 
@@ -1852,14 +2289,15 @@ def song_to_music(
                 ascending=(not is_bridge),
             )
             h_len = min(len(harp_l), n_sec)
-            lead_l[:h_len] += harp_l[:h_len] * 0.70
-            lead_r[:h_len] += harp_r[:h_len] * 0.70
+            lead_l[:h_len] += harp_l[:h_len] * 0.65
+            lead_r[:h_len] += harp_r[:h_len] * 0.65
 
-        # 3. Symphonic String Pad (swells during Chorus & Bridge)
-        pad_intensity = 0.85 if is_chorus else (0.75 if is_bridge else 0.52)
+        # 3. Symphonic String Pad (swells during Chorus & Bridge, de-mudded in 150-400 Hz)
+        pad_intensity = 0.78 if is_chorus else (0.68 if is_bridge else 0.46)
         pad_l, pad_r = symphonic_pad_section(n_sec, raga, FREQUENCIES, sr=sr, intensity=pad_intensity)
 
-        # 4. Beat-Synchronized Stereo Tabla & Sub-Bass with Tihai cadence
+        # 4. Beat-Synchronized Stereo Tabla & Sub-Bass (Tihai reserved for Chorus hooks & Finale)
+        use_tihai = is_chorus or is_outro or (sec_i == len(sections) - 1)
         tab_l, tab_r = tabla_track(
             n_sec,
             sr=sr,
@@ -1867,7 +2305,7 @@ def song_to_music(
             tonic_hz=tonic_hz,
             tala=tala_name,
             is_chorus=is_chorus,
-            with_tihai=True,
+            with_tihai=use_tihai,
         )
 
         sec_l = melody_vol * lead_l + pad_vol * pad_l + tabla_vol * tab_l
@@ -1879,7 +2317,7 @@ def song_to_music(
 
     # Add a final resolving Shadja (Sa) chord + Swarmandal outro tail (2 beats)
     outro_samples = int((60.0 / max(40.0, bpm)) * 2.5 * sr)
-    outro_pad_l, outro_pad_r = symphonic_pad_section(outro_samples, first_raga, FREQUENCIES, sr=sr, intensity=0.65)
+    outro_pad_l, outro_pad_r = symphonic_pad_section(outro_samples, first_raga, FREQUENCIES, sr=sr, intensity=0.60)
     harp_out_l, harp_out_r = synth_swarmandal_gliss(first_raga.get("aaroha", first_raga["notes"][:7]), FREQUENCIES, sr=sr)
     ho_len = min(len(harp_out_l), outro_samples)
     outro_pad_l[:ho_len] += harp_out_l[:ho_len] * 0.65
@@ -1897,7 +2335,7 @@ def song_to_music(
     mix_r += drone_vol * tan_r
 
     # 6. Concert Hall Stereo Reverb & Studio Mastering
-    wet_l, wet_r = apply_concert_hall_reverb(mix_l, mix_r, sr=sr, wet=0.28)
+    wet_l, wet_r = apply_concert_hall_reverb(mix_l, mix_r, sr=sr, wet=0.26)
     master_stereo = master_stereo_bus(wet_l, wet_r, sr=sr)
 
     # Print detailed Word -> Swara -> Melisma -> Duration table

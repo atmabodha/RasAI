@@ -1,0 +1,962 @@
+[
+  {
+    "song": {
+      "id": "01_abhi_na_jao_chhod_kar",
+      "title": "Abhi Na Jao Chhod Kar",
+      "movie": "Hum Dono (1961)",
+      "composer": "Jaidev",
+      "lyricist": "Sahir Ludhianvi",
+      "singer": "Mohammed Rafi & Asha Bhosle",
+      "true_raga": "Yaman",
+      "true_tala": "Dadra",
+      "true_tonic": "C#",
+      "true_bpm": "88",
+      "itunes_query": "Abhi Na Jao Chhod Kar Asha Bhosle Mohd Rafi",
+      "lyrics_file": "/Users/apple/Code/RasAI/bollywood_comparison/lyrics/01_abhi_na_jao_chhod_kar.txt"
+    },
+    "original_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/original_mp3/01_abhi_na_jao_chhod_kar_original.mp3",
+    "rasai_auto_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/generated_mp3/01_abhi_na_jao_chhod_kar_rasai_auto.mp3",
+    "rasai_matched_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/generated_mp3/01_abhi_na_jao_chhod_kar_rasai_matched.mp3",
+    "pipeline_diagnostics": {
+      "sections": [
+        {
+          "label": "Chorus",
+          "auto_raga": "Yaman",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": 0.0,
+            "subjectivity": 0.548,
+            "sorrow": 0.0,
+            "joy": 0.0,
+            "peace": 1.77,
+            "yearning": 16.879,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Verse 1",
+          "auto_raga": "Yaman",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": 0.286,
+            "subjectivity": 0.392,
+            "sorrow": 0.0,
+            "joy": 3.258,
+            "peace": 0.429,
+            "yearning": 7.354,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Chorus",
+          "auto_raga": "Yaman",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": 0.0,
+            "subjectivity": 0.857,
+            "sorrow": 0.0,
+            "joy": 0.0,
+            "peace": 0.6,
+            "yearning": 10.258,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Bridge",
+          "auto_raga": "Yaman",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": -0.3,
+            "subjectivity": 0.539,
+            "sorrow": 4.661,
+            "joy": 0.0,
+            "peace": 0.42,
+            "yearning": 10.1,
+            "mystic": 0.0,
+            "bittersweet": 13.049
+          }
+        },
+        {
+          "label": "Chorus",
+          "auto_raga": "Yaman",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": 0.0,
+            "subjectivity": 0.857,
+            "sorrow": 0.0,
+            "joy": 0.0,
+            "peace": 0.6,
+            "yearning": 10.258,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        }
+      ],
+      "silent_e_Hindi_words": [
+        [
+          "aaye",
+          3
+        ],
+        [
+          "banke",
+          1
+        ],
+        [
+          "chhaye",
+          3
+        ],
+        [
+          "nashe",
+          2
+        ],
+        [
+          "sitaare",
+          3
+        ],
+        [
+          "uthe",
+          2
+        ],
+        [
+          "uthe",
+          2
+        ],
+        [
+          "badhke",
+          2
+        ]
+      ]
+    },
+    "metrics_original": {
+      "duration_sec": 29.98,
+      "crest_factor_db": 8.96,
+      "dynamic_range_p95_p10_db": 12.01,
+      "rms_db_std": 3.94,
+      "stereo_width_ratio": 0.347,
+      "sub_bass_20_120_pct": 56.05,
+      "low_mid_120_500_pct": 25.57,
+      "vocal_lead_500_3500_pct": 16.99,
+      "presence_3500_8000_pct": 0.94,
+      "air_8000_20000_pct": 0.38,
+      "spectral_centroid_hz": 386.1,
+      "spectral_flatness": 0.00587,
+      "pitch_span_semitones": 31.91,
+      "pitch_std_semitones": 8.07,
+      "frame_pitch_mod_cents": 15.25,
+      "onset_rate_per_sec": 3.57
+    },
+    "metrics_rasai_auto": {
+      "duration_sec": 161.79,
+      "crest_factor_db": 11.13,
+      "dynamic_range_p95_p10_db": 14.66,
+      "rms_db_std": 6.36,
+      "stereo_width_ratio": 0.152,
+      "sub_bass_20_120_pct": 1.05,
+      "low_mid_120_500_pct": 60.64,
+      "vocal_lead_500_3500_pct": 38.06,
+      "presence_3500_8000_pct": 0.21,
+      "air_8000_20000_pct": 0.02,
+      "spectral_centroid_hz": 544.0,
+      "spectral_flatness": 0.0017,
+      "pitch_span_semitones": 12.0,
+      "pitch_std_semitones": 4.36,
+      "frame_pitch_mod_cents": 10.85,
+      "onset_rate_per_sec": 3.87
+    },
+    "metrics_rasai_matched": {
+      "duration_sec": 176.25,
+      "crest_factor_db": 12.92,
+      "dynamic_range_p95_p10_db": 19.97,
+      "rms_db_std": 7.56,
+      "stereo_width_ratio": 0.158,
+      "sub_bass_20_120_pct": 1.62,
+      "low_mid_120_500_pct": 60.24,
+      "vocal_lead_500_3500_pct": 37.9,
+      "presence_3500_8000_pct": 0.21,
+      "air_8000_20000_pct": 0.02,
+      "spectral_centroid_hz": 541.1,
+      "spectral_flatness": 0.00167,
+      "pitch_span_semitones": 12.0,
+      "pitch_std_semitones": 4.13,
+      "frame_pitch_mod_cents": 10.85,
+      "onset_rate_per_sec": 3.77
+    }
+  },
+  {
+    "song": {
+      "id": "02_o_duniya_ke_rakhwale",
+      "title": "O Duniya Ke Rakhwale",
+      "movie": "Baiju Bawra (1952)",
+      "composer": "Naushad",
+      "lyricist": "Shakeel Badayuni",
+      "singer": "Mohammed Rafi",
+      "true_raga": "Darbari",
+      "true_tala": "Keherwa",
+      "true_tonic": "D",
+      "true_bpm": "76",
+      "itunes_query": "O Duniya Ke Rakhwale Mohd Rafi",
+      "lyrics_file": "/Users/apple/Code/RasAI/bollywood_comparison/lyrics/02_o_duniya_ke_rakhwale.txt"
+    },
+    "original_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/original_mp3/02_o_duniya_ke_rakhwale_original.mp3",
+    "rasai_auto_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/generated_mp3/02_o_duniya_ke_rakhwale_rasai_auto.mp3",
+    "rasai_matched_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/generated_mp3/02_o_duniya_ke_rakhwale_rasai_matched.mp3",
+    "pipeline_diagnostics": {
+      "sections": [
+        {
+          "label": "Intro",
+          "auto_raga": "Yaman",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": 0.0,
+            "subjectivity": 0.0,
+            "sorrow": 0.0,
+            "joy": 0.0,
+            "peace": 17.921,
+            "yearning": 0.0,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Chorus",
+          "auto_raga": "Darbari",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": -0.857,
+            "subjectivity": 0.667,
+            "sorrow": 17.035,
+            "joy": 0.0,
+            "peace": 0.086,
+            "yearning": 3.182,
+            "mystic": 9.037,
+            "bittersweet": 17.17
+          }
+        },
+        {
+          "label": "Verse 1",
+          "auto_raga": "Darbari",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": -1.0,
+            "subjectivity": 0.286,
+            "sorrow": 7.277,
+            "joy": 0.0,
+            "peace": 5.477,
+            "yearning": 0.257,
+            "mystic": 3.651,
+            "bittersweet": 7.805
+          }
+        },
+        {
+          "label": "Chorus",
+          "auto_raga": "Darbari",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": -1.0,
+            "subjectivity": 0.635,
+            "sorrow": 8.467,
+            "joy": 0.0,
+            "peace": 0.0,
+            "yearning": 0.571,
+            "mystic": 6.667,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Bridge",
+          "auto_raga": "Darbari",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": -0.4,
+            "subjectivity": 0.42,
+            "sorrow": 4.15,
+            "joy": 0.0,
+            "peace": 3.79,
+            "yearning": 5.523,
+            "mystic": 1.715,
+            "bittersweet": 9.775
+          }
+        },
+        {
+          "label": "Chorus",
+          "auto_raga": "Darbari",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": -1.0,
+            "subjectivity": 0.635,
+            "sorrow": 8.467,
+            "joy": 0.0,
+            "peace": 0.0,
+            "yearning": 0.571,
+            "mystic": 6.667,
+            "bittersweet": 0.0
+          }
+        }
+      ],
+      "silent_e_Hindi_words": [
+        [
+          "rakhwaale",
+          3
+        ],
+        [
+          "bhare",
+          2
+        ],
+        [
+          "mere",
+          2
+        ],
+        [
+          "naale",
+          2
+        ],
+        [
+          "rakhwaale",
+          3
+        ],
+        [
+          "bhare",
+          2
+        ],
+        [
+          "mere",
+          2
+        ],
+        [
+          "naale",
+          2
+        ]
+      ]
+    },
+    "metrics_original": {
+      "duration_sec": 29.95,
+      "crest_factor_db": 16.48,
+      "dynamic_range_p95_p10_db": 20.52,
+      "rms_db_std": 8.77,
+      "stereo_width_ratio": 0.042,
+      "sub_bass_20_120_pct": 3.77,
+      "low_mid_120_500_pct": 68.21,
+      "vocal_lead_500_3500_pct": 27.86,
+      "presence_3500_8000_pct": 0.15,
+      "air_8000_20000_pct": 0.01,
+      "spectral_centroid_hz": 457.3,
+      "spectral_flatness": 0.00015,
+      "pitch_span_semitones": 14.34,
+      "pitch_std_semitones": 5.05,
+      "frame_pitch_mod_cents": 14.43,
+      "onset_rate_per_sec": 3.21
+    },
+    "metrics_rasai_auto": {
+      "duration_sec": 145.36,
+      "crest_factor_db": 11.52,
+      "dynamic_range_p95_p10_db": 17.54,
+      "rms_db_std": 6.82,
+      "stereo_width_ratio": 0.157,
+      "sub_bass_20_120_pct": 1.23,
+      "low_mid_120_500_pct": 68.75,
+      "vocal_lead_500_3500_pct": 29.77,
+      "presence_3500_8000_pct": 0.21,
+      "air_8000_20000_pct": 0.02,
+      "spectral_centroid_hz": 493.7,
+      "spectral_flatness": 0.00179,
+      "pitch_span_semitones": 10.82,
+      "pitch_std_semitones": 3.31,
+      "frame_pitch_mod_cents": 10.85,
+      "onset_rate_per_sec": 3.9
+    },
+    "metrics_rasai_matched": {
+      "duration_sec": 160.66,
+      "crest_factor_db": 11.28,
+      "dynamic_range_p95_p10_db": 18.16,
+      "rms_db_std": 7.1,
+      "stereo_width_ratio": 0.155,
+      "sub_bass_20_120_pct": 1.15,
+      "low_mid_120_500_pct": 64.48,
+      "vocal_lead_500_3500_pct": 34.09,
+      "presence_3500_8000_pct": 0.27,
+      "air_8000_20000_pct": 0.02,
+      "spectral_centroid_hz": 532.0,
+      "spectral_flatness": 0.00178,
+      "pitch_span_semitones": 10.97,
+      "pitch_std_semitones": 3.49,
+      "frame_pitch_mod_cents": 11.5,
+      "onset_rate_per_sec": 3.77
+    }
+  },
+  {
+    "song": {
+      "id": "03_jago_mohan_pyare",
+      "title": "Jago Mohan Pyare",
+      "movie": "Jagte Raho (1956)",
+      "composer": "Salil Chowdhury",
+      "lyricist": "Shailendra",
+      "singer": "Lata Mangeshkar",
+      "true_raga": "Bhairav",
+      "true_tala": "Dadra",
+      "true_tonic": "C#",
+      "true_bpm": "92",
+      "itunes_query": "Jago Mohan Pyare Lata Mangeshkar",
+      "lyrics_file": "/Users/apple/Code/RasAI/bollywood_comparison/lyrics/03_jago_mohan_pyare.txt"
+    },
+    "original_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/original_mp3/03_jago_mohan_pyare_original.mp3",
+    "rasai_auto_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/generated_mp3/03_jago_mohan_pyare_rasai_auto.mp3",
+    "rasai_matched_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/generated_mp3/03_jago_mohan_pyare_rasai_matched.mp3",
+    "pipeline_diagnostics": {
+      "sections": [
+        {
+          "label": "Intro",
+          "auto_raga": "Bhairav",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": 0.0,
+            "subjectivity": 0.0,
+            "sorrow": 0.0,
+            "joy": 0.0,
+            "peace": 16.252,
+            "yearning": 0.0,
+            "mystic": 2.236,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Chorus",
+          "auto_raga": "Bhairav",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": 0.5,
+            "subjectivity": 0.357,
+            "sorrow": 0.0,
+            "joy": 3.3,
+            "peace": 22.8,
+            "yearning": 2.821,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Verse 1",
+          "auto_raga": "Bhairav",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": 0.0,
+            "subjectivity": 0.44,
+            "sorrow": 1.961,
+            "joy": 1.961,
+            "peace": 10.406,
+            "yearning": 4.318,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Chorus",
+          "auto_raga": "Bhairav",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": 0.5,
+            "subjectivity": 0.476,
+            "sorrow": 0.0,
+            "joy": 3.687,
+            "peace": 17.621,
+            "yearning": 3.315,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Bridge",
+          "auto_raga": "Yaman",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": 0.0,
+            "subjectivity": 0.179,
+            "sorrow": 0.0,
+            "joy": 0.0,
+            "peace": 3.1,
+            "yearning": 2.661,
+            "mystic": 2.5,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Chorus",
+          "auto_raga": "Bhairav",
+          "auto_tala": "Keherwa",
+          "rasa_scores": {
+            "polarity": 0.5,
+            "subjectivity": 0.476,
+            "sorrow": 0.0,
+            "joy": 3.687,
+            "peace": 17.621,
+            "yearning": 3.315,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        }
+      ],
+      "silent_e_Hindi_words": [
+        [
+          "chhaaye",
+          3
+        ],
+        [
+          "jaaye",
+          3
+        ],
+        [
+          "gaaye",
+          3
+        ],
+        [
+          "mere",
+          2
+        ],
+        [
+          "pyaare",
+          3
+        ],
+        [
+          "pyaare",
+          3
+        ],
+        [
+          "pyaare",
+          3
+        ],
+        [
+          "choome",
+          2
+        ]
+      ]
+    },
+    "metrics_original": {
+      "duration_sec": 29.93,
+      "crest_factor_db": 11.47,
+      "dynamic_range_p95_p10_db": 11.38,
+      "rms_db_std": 5.38,
+      "stereo_width_ratio": 0.0,
+      "sub_bass_20_120_pct": 0.03,
+      "low_mid_120_500_pct": 29.63,
+      "vocal_lead_500_3500_pct": 69.85,
+      "presence_3500_8000_pct": 0.49,
+      "air_8000_20000_pct": 0.0,
+      "spectral_centroid_hz": 986.7,
+      "spectral_flatness": 0.0,
+      "pitch_span_semitones": 24.79,
+      "pitch_std_semitones": 7.79,
+      "frame_pitch_mod_cents": 16.97,
+      "onset_rate_per_sec": 3.74
+    },
+    "metrics_rasai_auto": {
+      "duration_sec": 128.21,
+      "crest_factor_db": 11.04,
+      "dynamic_range_p95_p10_db": 18.86,
+      "rms_db_std": 7.45,
+      "stereo_width_ratio": 0.164,
+      "sub_bass_20_120_pct": 1.05,
+      "low_mid_120_500_pct": 62.34,
+      "vocal_lead_500_3500_pct": 36.33,
+      "presence_3500_8000_pct": 0.25,
+      "air_8000_20000_pct": 0.02,
+      "spectral_centroid_hz": 582.7,
+      "spectral_flatness": 0.0018,
+      "pitch_span_semitones": 12.54,
+      "pitch_std_semitones": 4.41,
+      "frame_pitch_mod_cents": 10.92,
+      "onset_rate_per_sec": 3.6
+    },
+    "metrics_rasai_matched": {
+      "duration_sec": 104.67,
+      "crest_factor_db": 10.82,
+      "dynamic_range_p95_p10_db": 18.23,
+      "rms_db_std": 7.29,
+      "stereo_width_ratio": 0.161,
+      "sub_bass_20_120_pct": 1.52,
+      "low_mid_120_500_pct": 60.21,
+      "vocal_lead_500_3500_pct": 37.98,
+      "presence_3500_8000_pct": 0.26,
+      "air_8000_20000_pct": 0.02,
+      "spectral_centroid_hz": 584.9,
+      "spectral_flatness": 0.00173,
+      "pitch_span_semitones": 12.77,
+      "pitch_std_semitones": 4.52,
+      "frame_pitch_mod_cents": 10.92,
+      "onset_rate_per_sec": 3.8
+    }
+  },
+  {
+    "song": {
+      "id": "04_mere_naina_sawan_bhadon",
+      "title": "Mere Naina Sawan Bhadon",
+      "movie": "Mehbooba (1976)",
+      "composer": "R. D. Burman",
+      "lyricist": "Anand Bakshi",
+      "singer": "Kishore Kumar",
+      "true_raga": "Shivaranjani",
+      "true_tala": "Keherwa",
+      "true_tonic": "D#",
+      "true_bpm": "82",
+      "itunes_query": "Mere Naina Sawan Bhadon Kishore Kumar",
+      "lyrics_file": "/Users/apple/Code/RasAI/bollywood_comparison/lyrics/04_mere_naina_sawan_bhadon.txt"
+    },
+    "original_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/original_mp3/04_mere_naina_sawan_bhadon_original.mp3",
+    "rasai_auto_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/generated_mp3/04_mere_naina_sawan_bhadon_rasai_auto.mp3",
+    "rasai_matched_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/generated_mp3/04_mere_naina_sawan_bhadon_rasai_matched.mp3",
+    "pipeline_diagnostics": {
+      "sections": [
+        {
+          "label": "Chorus",
+          "auto_raga": "Shivaranjani",
+          "auto_tala": "Dadra",
+          "rasa_scores": {
+            "polarity": -0.462,
+            "subjectivity": 0.675,
+            "sorrow": 8.921,
+            "joy": 0.0,
+            "peace": 5.717,
+            "yearning": 10.047,
+            "mystic": 0.0,
+            "bittersweet": 19.215
+          }
+        },
+        {
+          "label": "Verse 1",
+          "auto_raga": "Shivaranjani",
+          "auto_tala": "Dadra",
+          "rasa_scores": {
+            "polarity": -0.5,
+            "subjectivity": 0.346,
+            "sorrow": 4.382,
+            "joy": 0.0,
+            "peace": 2.041,
+            "yearning": 3.793,
+            "mystic": 0.0,
+            "bittersweet": 7.442
+          }
+        },
+        {
+          "label": "Chorus",
+          "auto_raga": "Shivaranjani",
+          "auto_tala": "Dadra",
+          "rasa_scores": {
+            "polarity": -0.5,
+            "subjectivity": 0.635,
+            "sorrow": 4.233,
+            "joy": 0.0,
+            "peace": 6.967,
+            "yearning": 3.905,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Bridge",
+          "auto_raga": "Shivaranjani",
+          "auto_tala": "Dadra",
+          "rasa_scores": {
+            "polarity": -0.75,
+            "subjectivity": 0.369,
+            "sorrow": 6.738,
+            "joy": 0.0,
+            "peace": 1.946,
+            "yearning": 2.128,
+            "mystic": 1.796,
+            "bittersweet": 7.678
+          }
+        },
+        {
+          "label": "Chorus",
+          "auto_raga": "Shivaranjani",
+          "auto_tala": "Dadra",
+          "rasa_scores": {
+            "polarity": -0.5,
+            "subjectivity": 0.635,
+            "sorrow": 4.233,
+            "joy": 0.0,
+            "peace": 6.967,
+            "yearning": 3.905,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        }
+      ],
+      "silent_e_Hindi_words": [
+        [
+          "mere",
+          2
+        ],
+        [
+          "mere",
+          2
+        ],
+        [
+          "deewaane",
+          3
+        ],
+        [
+          "jaane",
+          2
+        ],
+        [
+          "aaye",
+          3
+        ],
+        [
+          "jaaye",
+          3
+        ],
+        [
+          "bhoole",
+          2
+        ],
+        [
+          "jhoole",
+          2
+        ]
+      ]
+    },
+    "metrics_original": {
+      "duration_sec": 29.95,
+      "crest_factor_db": 16.32,
+      "dynamic_range_p95_p10_db": 13.09,
+      "rms_db_std": 15.53,
+      "stereo_width_ratio": 0.045,
+      "sub_bass_20_120_pct": 5.18,
+      "low_mid_120_500_pct": 58.14,
+      "vocal_lead_500_3500_pct": 35.31,
+      "presence_3500_8000_pct": 1.35,
+      "air_8000_20000_pct": 0.0,
+      "spectral_centroid_hz": 542.6,
+      "spectral_flatness": 7e-05,
+      "pitch_span_semitones": 21.25,
+      "pitch_std_semitones": 6.0,
+      "frame_pitch_mod_cents": 8.03,
+      "onset_rate_per_sec": 4.14
+    },
+    "metrics_rasai_auto": {
+      "duration_sec": 138.21,
+      "crest_factor_db": 12.56,
+      "dynamic_range_p95_p10_db": 20.12,
+      "rms_db_std": 7.54,
+      "stereo_width_ratio": 0.17,
+      "sub_bass_20_120_pct": 1.75,
+      "low_mid_120_500_pct": 61.06,
+      "vocal_lead_500_3500_pct": 36.91,
+      "presence_3500_8000_pct": 0.26,
+      "air_8000_20000_pct": 0.02,
+      "spectral_centroid_hz": 545.9,
+      "spectral_flatness": 0.00177,
+      "pitch_span_semitones": 9.13,
+      "pitch_std_semitones": 4.07,
+      "frame_pitch_mod_cents": 10.92,
+      "onset_rate_per_sec": 3.7
+    },
+    "metrics_rasai_matched": {
+      "duration_sec": 115.98,
+      "crest_factor_db": 10.94,
+      "dynamic_range_p95_p10_db": 13.49,
+      "rms_db_std": 6.4,
+      "stereo_width_ratio": 0.145,
+      "sub_bass_20_120_pct": 1.09,
+      "low_mid_120_500_pct": 57.88,
+      "vocal_lead_500_3500_pct": 40.65,
+      "presence_3500_8000_pct": 0.36,
+      "air_8000_20000_pct": 0.02,
+      "spectral_centroid_hz": 603.1,
+      "spectral_flatness": 0.00191,
+      "pitch_span_semitones": 20.64,
+      "pitch_std_semitones": 4.98,
+      "frame_pitch_mod_cents": 12.15,
+      "onset_rate_per_sec": 3.67
+    }
+  },
+  {
+    "song": {
+      "id": "05_laga_chunari_mein_daag",
+      "title": "Laga Chunari Mein Daag",
+      "movie": "Dil Hi To Hai (1963)",
+      "composer": "Roshan",
+      "lyricist": "Sahir Ludhianvi",
+      "singer": "Manna Dey",
+      "true_raga": "Bhairavi",
+      "true_tala": "Teental",
+      "true_tonic": "D",
+      "true_bpm": "108",
+      "itunes_query": "Laga Chunari Mein Daag Manna Dey",
+      "lyrics_file": "/Users/apple/Code/RasAI/bollywood_comparison/lyrics/05_laga_chunari_mein_daag.txt"
+    },
+    "original_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/original_mp3/05_laga_chunari_mein_daag_original.mp3",
+    "rasai_auto_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/generated_mp3/05_laga_chunari_mein_daag_rasai_auto.mp3",
+    "rasai_matched_mp3": "/Users/apple/Code/RasAI/bollywood_comparison/generated_mp3/05_laga_chunari_mein_daag_rasai_matched.mp3",
+    "pipeline_diagnostics": {
+      "sections": [
+        {
+          "label": "Chorus",
+          "auto_raga": "Bhairavi",
+          "auto_tala": "Dadra",
+          "rasa_scores": {
+            "polarity": -1.0,
+            "subjectivity": 0.476,
+            "sorrow": 9.965,
+            "joy": 0.0,
+            "peace": 0.0,
+            "yearning": 0.429,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Verse 1",
+          "auto_raga": "Bhairavi",
+          "auto_tala": "Dadra",
+          "rasa_scores": {
+            "polarity": -0.5,
+            "subjectivity": 0.143,
+            "sorrow": 3.136,
+            "joy": 0.0,
+            "peace": 0.3,
+            "yearning": 0.129,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Chorus",
+          "auto_raga": "Bhairavi",
+          "auto_tala": "Dadra",
+          "rasa_scores": {
+            "polarity": -0.5,
+            "subjectivity": 0.333,
+            "sorrow": 4.982,
+            "joy": 0.0,
+            "peace": 0.3,
+            "yearning": 0.3,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Bridge",
+          "auto_raga": "Bhairavi",
+          "auto_tala": "Dadra",
+          "rasa_scores": {
+            "polarity": 0.0,
+            "subjectivity": 0.0,
+            "sorrow": 0.0,
+            "joy": 0.0,
+            "peace": 2.525,
+            "yearning": 0.0,
+            "mystic": 5.774,
+            "bittersweet": 0.0
+          }
+        },
+        {
+          "label": "Outro",
+          "auto_raga": "Bhairavi",
+          "auto_tala": "Dadra",
+          "rasa_scores": {
+            "polarity": -0.5,
+            "subjectivity": 0.11,
+            "sorrow": 2.861,
+            "joy": 0.0,
+            "peace": 2.261,
+            "yearning": 0.099,
+            "mystic": 0.0,
+            "bittersweet": 0.0
+          }
+        }
+      ],
+      "silent_e_Hindi_words": [
+        [
+          "kaise",
+          2
+        ],
+        [
+          "kaise",
+          2
+        ],
+        [
+          "kaise",
+          2
+        ],
+        [
+          "kaise",
+          2
+        ],
+        [
+          "kore",
+          2
+        ],
+        [
+          "kaise",
+          2
+        ],
+        [
+          "kaise",
+          2
+        ],
+        [
+          "kaise",
+          2
+        ]
+      ]
+    },
+    "metrics_original": {
+      "duration_sec": 29.93,
+      "crest_factor_db": 14.75,
+      "dynamic_range_p95_p10_db": 8.75,
+      "rms_db_std": 3.23,
+      "stereo_width_ratio": 0.167,
+      "sub_bass_20_120_pct": 3.95,
+      "low_mid_120_500_pct": 48.59,
+      "vocal_lead_500_3500_pct": 46.69,
+      "presence_3500_8000_pct": 0.76,
+      "air_8000_20000_pct": 0.0,
+      "spectral_centroid_hz": 678.6,
+      "spectral_flatness": 4e-05,
+      "pitch_span_semitones": 17.0,
+      "pitch_std_semitones": 5.46,
+      "frame_pitch_mod_cents": 16.65,
+      "onset_rate_per_sec": 4.84
+    },
+    "metrics_rasai_auto": {
+      "duration_sec": 103.21,
+      "crest_factor_db": 11.44,
+      "dynamic_range_p95_p10_db": 19.87,
+      "rms_db_std": 7.53,
+      "stereo_width_ratio": 0.162,
+      "sub_bass_20_120_pct": 1.54,
+      "low_mid_120_500_pct": 69.51,
+      "vocal_lead_500_3500_pct": 28.69,
+      "presence_3500_8000_pct": 0.23,
+      "air_8000_20000_pct": 0.02,
+      "spectral_centroid_hz": 512.7,
+      "spectral_flatness": 0.00168,
+      "pitch_span_semitones": 9.88,
+      "pitch_std_semitones": 3.55,
+      "frame_pitch_mod_cents": 10.92,
+      "onset_rate_per_sec": 3.6
+    },
+    "metrics_rasai_matched": {
+      "duration_sec": 73.06,
+      "crest_factor_db": 10.5,
+      "dynamic_range_p95_p10_db": 14.67,
+      "rms_db_std": 6.84,
+      "stereo_width_ratio": 0.16,
+      "sub_bass_20_120_pct": 1.68,
+      "low_mid_120_500_pct": 69.36,
+      "vocal_lead_500_3500_pct": 28.63,
+      "presence_3500_8000_pct": 0.29,
+      "air_8000_20000_pct": 0.02,
+      "spectral_centroid_hz": 528.0,
+      "spectral_flatness": 0.00177,
+      "pitch_span_semitones": 13.96,
+      "pitch_std_semitones": 5.12,
+      "frame_pitch_mod_cents": 11.58,
+      "onset_rate_per_sec": 3.8
+    }
+  }
+]

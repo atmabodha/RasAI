@@ -13,25 +13,25 @@
 
 1. **3-Octave Just Intonation (22-Shruti Pure Harmonic Ratios)**
    - Tuned to pure harmonic intervals relative to a configurable concert tonic (`Sa`, defaulting to `C#` = 277.18 Hz) across three octaves: *Mandra Saptak* (`.Sa`–`.Ni`), *Madhya Saptak* (`Sa`–`Ni`), and *Taar Saptak* (`Sa'`–`Pa'`).
-2. **Navarasa Emotional Sentiment & 10 Authentic Ragas**
-   - Combines a curated poetic/emotional lexicon (Joy, Pathos, Yearning, Peace, Majesty, Bittersweet Contrast) with `TextBlob` polarity/subjectivity and song-section awareness to map each section (`[Verse]`, `[Chorus]`, `[Bridge]`) to an authentic Raga with distinct *Aaroha* (ascending scale), *Avaroha* (descending scale), *Vadi* (king note), *Samvadi* (queen note), *Pakad* (signature phrases), and *Andolan* (oscillating swaras).
-3. **Prosody, Motif Memory & Melodic Grammar**
-   - Preserves poetic line breaks, syllable counts, stress weights, and rhyme endings.
-   - Caches the first `[Chorus]` melodic hook (*Asthayi*) and replays it across subsequent choruses with elevated orchestration.
-   - Weaves authentic Raga *Pakad* phrases and multi-syllable melismas (*Swara Vistara*) into long vowels and emotional words.
-4. **Expressive Continuous-Phase Lead Synthesis**
-   - Zero-click continuous phase integration supporting authentic Indian classical ornamentations: **Meend** (smooth sigmoid pitch glides), **Kan Swara** (35 ms pre-note grace notes), delayed **Andolan / Vibrato**, and **Gamak**.
-   - Dynamically blends three synthesized lead voices according to section role and Raga mood:
-     - **Bansuri**: Concert bamboo flute with harmonic overtones, chiff attack, and warm breath turbulence.
-     - **Sitar**: Plucked string with nonlinear **Jawari** bridge buzz and sympathetic **Taraf** string resonance.
-     - **Sarangi / Solo Cello**: Bowed vocal-formant lead for poignant *Karuna* / *Viraha* passages and soaring choruses.
+2. **Multilingual Navarasa Sentiment & 10 Authentic Ragas (English, Roman Hindi & Devanagari)**
+   - Supports **English**, **Romanized Hindi/Urdu**, and **Devanagari (`देवनागरी`)** lyrics with automatic transliteration and false-cognate protection.
+   - Combines a bilingual poetic lexicon, classical Raga imagery signatures, and `TextBlob` polarity to select Ragas—modulating across sections for cinematic English songs or locking a unified primary Raga across *Mukhda* (*Asthayi*) and *Antara* for traditional Hindi/classical compositions.
+3. **Bilingual Prosody, Tala Alignment & Classical Melodic Grammar**
+   - Applies language-aware syllable and meter rules (*Laghu–Guru* vowel weights and *Drut Tarana* subdivisions for Hindi; stress/silent-`e` rules for English) aligned to Tala bar quanta (`Dadra` 6-beat, `Rupak` 7-beat, `Keherwa` 8-beat, `Teental` 16-beat).
+   - Follows directional **Aaroha** (ascending) and **Avaroha** (descending) scale grammar, **Asthayi** (*Purvang* lower-middle register) vs. **Antara** (*Uttarang* upper `Sa'` climax) register contrast, motif memory across `[Chorus]` / `[Mukhda]` hooks, and signature *Pakad* phrases.
+4. **Expressive Continuous-Phase Lead & Vowel-Formant Synthesis**
+   - Zero-click continuous phase integration supporting authentic Indian classical ornamentations: **Meend** (sigmoid pitch glides), **Pukar** (expressive vocal onset scoops), **Kan Swara** (pre-note grace notes), **Andolan**, and **Gamak**.
+   - Shapes lead phrases through a dynamic **5-vowel formant filter bank** (`/aa/`, `/ee/`, `/oo/`, `/e/`, `/o/`) driven by the vowel of each sung lyric word, plus **Jawab-Sawal** (Sitar call-and-response echoes during phrase rests) and continuous **Taraf** sympathetic string resonance:
+     - **Bansuri**: Concert bamboo flute with extended harmonic overtones (`h1–h7`), chiff attack, and breath turbulence.
+     - **Sitar**: Plucked string with nonlinear **Jawari** bridge buzz and sympathetic **Taraf** strings.
+     - **Sarangi / Solo Cello**: Bowed vocal-formant lead for poignant *Karuna* / *Viraha* passages and soaring *Antara* climaxes.
 5. **Full Cinematic Orchestration & Physical-Modeled Percussion**
    - **Tanpura Drone**: Continuous stereo 4-string cycle (`Pa/Ma – Sa' – Sa' – .Sa`) with parabolic **Jivari** bridge overtone shimmer.
-   - **Symphonic String Pad & Swarmandal**: Lush modal string swells (`Sa–Pa–Vadi–Samvadi`) and stereo Indian harp (*Swarmandal*) glissandi at section transitions.
+   - **Symphonic String Pad & Swarmandal**: Lush modal string swells (`Sa–Pa–Vadi–Samvadi`) with `150–400 Hz` low-mid EQ carving for lead clarity, plus stereo Indian harp (*Swarmandal*) glissandi at section transitions.
    - **Stereo Tabla & Tala Engine**: Pitched *Bayan* (left channel, with pitch-drop pressure modulation) and tonic-tuned *Dayan* (right channel, tuned to exact `Sa`), accompanied by *Manjira* bell chimes, sub-bass reinforcement, energetic *Lagi* chorus grooves, and a classic 3-fold **Tihai** cadence at the end of every section.
    - **Introductory Alap & Resolving Outro**: Free-rhythm meditative *Alap* introduction and a resolving *Shadja* (`Sa`) chord with *Swarmandal* tail.
 6. **Studio-Grade Stereo Mastering**
-   - Multi-tap **Concert Hall Stereo Reverb** with pre-delay and air absorption, warm analog `tanh` saturation, mid/side stereo width enhancement, and **44.1 kHz / 320 kbps Stereo MP3** export (via `lameenc` or `ffmpeg`).
+   - Multi-tap **Concert Hall Stereo Reverb** with pre-delay and air absorption, upper-harmonic presence shelf (`1.6 kHz+`), warm analog `tanh` saturation, mid/side stereo width enhancement, and **44.1 kHz / 320 kbps Stereo MP3** export (via `lameenc` or `ffmpeg`).
 
 ---
 
